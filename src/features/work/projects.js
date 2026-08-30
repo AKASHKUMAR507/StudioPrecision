@@ -10,6 +10,7 @@ export const PROJECTS = [
       badge: 'FINTECH APP',
       description:
         'A seamless React Native mobile application designed to simplify cross-border transactions for modern freelancers and remote teams.',
+      liveUrl: "https://github.com/AKASHKUMAR507",
     },
     challenge: {
       title: 'Fragmented Workflows',
@@ -45,6 +46,7 @@ export const PROJECTS = [
       badge: 'HEALTH TECH',
       description:
         'A remote patient-monitoring app streaming live vitals from bedside devices to clinicians over resilient WebSocket connections.',
+      liveUrl: "https://github.com/AKASHKUMAR507",
     },
     challenge: {
       title: 'Unreliable Device Telemetry',
@@ -80,6 +82,7 @@ export const PROJECTS = [
       badge: 'CATALOGING',
       description:
         'A high-performance inventory management app built for large-scale retail environments with thousands of SKUs per store.',
+      liveUrl: "https://github.com/AKASHKUMAR507",
     },
     challenge: {
       title: 'Slow, Offline-Unfriendly Search',

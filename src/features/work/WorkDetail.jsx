@@ -29,6 +29,17 @@ export function WorkDetail() {
           <p className="mt-stack-sm max-w-md text-body-lg font-body-lg text-on-surface-variant">
             {project.hero.description}
           </p>
+          {project.hero.liveUrl ? (
+            <a
+              href={project.hero.liveUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-stack-md inline-flex w-fit items-center gap-2 rounded bg-tertiary px-6 py-3 font-mono-label text-mono-label text-on-tertiary transition-colors hover:bg-tertiary/90 active:translate-y-px"
+            >
+              View Live App
+              <Icon name="open_in_new" className="text-[18px]" />
+            </a>
+          ) : null}
         </div>
         <div className="relative col-span-12 mt-stack-lg md:col-span-6 md:mt-0">
           <div className="mx-auto aspect-[9/19] w-full max-w-[320px] overflow-hidden rounded-[3rem] border border-whisper bg-surface-container-lowest p-4 shadow-ambient">
