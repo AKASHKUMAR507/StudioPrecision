@@ -1,5 +1,6 @@
 import { Icon } from '../../components/ui/Icon'
 import { ImagePlaceholder } from '../../components/ui/ImagePlaceholder'
+import { SITE } from '../../config/site'
 import { revealClass, useReveal } from '../../hooks/useReveal'
 
 const ARSENAL = [
@@ -47,13 +48,13 @@ function Hero() {
         </p>
         <div className="flex gap-stack-md pt-4">
           <a
-            href="/resume.pdf"
+            href={SITE.resumeUrl}
             className="rounded-full bg-tertiary px-8 py-3 font-mono-label text-mono-label text-on-tertiary transition-colors hover:bg-tertiary/90 active:translate-y-px"
           >
             Download CV
           </a>
           <a
-            href="mailto:hello@example.com"
+            href={`mailto:${SITE.email}`}
             className="rounded-full border border-outline px-8 py-3 font-mono-label text-mono-label text-on-surface transition-colors hover:bg-surface-variant"
           >
             Contact

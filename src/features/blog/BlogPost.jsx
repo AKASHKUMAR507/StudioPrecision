@@ -1,6 +1,7 @@
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { Icon } from '../../components/ui/Icon'
 import { ImagePlaceholder } from '../../components/ui/ImagePlaceholder'
+import { SITE } from '../../config/site'
 import { getPostBySlug } from './posts'
 
 function BodyBlock({ block }) {
@@ -62,12 +63,20 @@ export function BlogPost() {
         </div>
 
         <div className="mt-20 flex flex-col items-start gap-6 border-t border-outline-variant/30 pt-8 md:flex-row md:items-center">
-          <ImagePlaceholder label="Author portrait" icon="person" className="h-16 w-16 rounded-full" />
+          {SITE.author.avatarSrc ? (
+            <img
+              src={SITE.author.avatarSrc}
+              alt={SITE.author.name}
+              className="h-16 w-16 rounded-full object-cover"
+            />
+          ) : (
+            <ImagePlaceholder label="Author portrait" icon="person" className="h-16 w-16 rounded-full" />
+          )}
           <div>
-            <h3 className="text-body-lg font-headline-md font-medium text-on-background">Written by Studio Precision</h3>
-            <p className="mt-1 text-body-md font-body-md text-secondary">
-              Specializing in high-performance React Native architectures and fluid UI experiences.
-            </p>
+            <h3 className="text-body-lg font-headline-md font-medium text-on-background">
+              Written by {SITE.author.name}
+            </h3>
+            <p className="mt-1 text-body-md font-body-md text-secondary">{SITE.author.title}</p>
           </div>
         </div>
       </article>
