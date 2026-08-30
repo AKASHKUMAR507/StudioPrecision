@@ -1,4 +1,4 @@
-import { useTheme } from '../../hooks/useTheme'
+import { useTheme } from '../../hooks/ThemeContext'
 import { Icon } from '../ui/Icon'
 
 export function ThemeToggle({ className = '' }) {
