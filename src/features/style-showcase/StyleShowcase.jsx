@@ -14,7 +14,7 @@ export function StyleShowcase() {
   const [activeNav, setActiveNav] = useState('home')
 
   return (
-    <div className="showcase">
+    <div className="showcase legacy-showcase">
       <aside className="showcase__palette">
         {PALETTE.map((color) => (
           <ColorPalette key={color.name} {...color} />
