@@ -13,7 +13,7 @@ function HeroSection() {
       ref={ref}
       className={revealClass(
         visible,
-        'grid min-h-[520px] grid-cols-1 items-center gap-gutter pt-12 md:min-h-[640px] md:grid-cols-12',
+        'grid min-h-[430px] grid-cols-1 items-center gap-gutter md:min-h-[500px] md:grid-cols-12',
       )}
     >
       <div className="z-10 flex flex-col items-start gap-stack-lg md:col-span-8">
@@ -132,7 +132,7 @@ function WorkSection() {
 
 export function Home() {
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-section-gap px-canvas-margin-mobile pb-section-gap pt-12 md:px-canvas-margin">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-section-gap px-canvas-margin-mobile pb-section-gap pt-4 md:px-canvas-margin">
       <HeroSection />
       <CompetencySection />
       <WorkSection />
