@@ -10,6 +10,7 @@ export const SITE = {
   author: {
     name: 'Studio Precision',
     title: 'Specializing in high-performance React Native architectures and fluid UI experiences.',
-    avatarSrc: null,
+    avatarSrc: '/images/author-avatar.jpg',
+    portraitSrc: '/images/about-original.jpg',
   },
 }

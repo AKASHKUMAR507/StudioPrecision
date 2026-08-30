@@ -63,7 +63,15 @@ function Hero() {
       </div>
       <div className="order-1 md:order-2 md:col-span-5">
         <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl shadow-ambient">
-          <ImagePlaceholder label="Professional headshot" icon="person" className="h-full w-full" />
+          {SITE.author.portraitSrc ? (
+            <img
+              src={SITE.author.portraitSrc}
+              alt={SITE.author.name}
+              className="h-full w-full object-cover object-[center_20%]"
+            />
+          ) : (
+            <ImagePlaceholder label="Professional headshot" icon="person" className="h-full w-full" />
+          )}
         </div>
       </div>
     </section>
