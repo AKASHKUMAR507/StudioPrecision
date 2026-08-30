@@ -1,0 +1,241 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-background: var(--sp-background);
+  --color-on-background: var(--sp-on-background);
+  --color-surface: var(--sp-surface);
+  --color-surface-dim: var(--sp-surface-dim);
+  --color-surface-bright: var(--sp-surface-bright);
+  --color-surface-variant: var(--sp-surface-variant);
+  --color-surface-container-lowest: var(--sp-surface-container-lowest);
+  --color-surface-container-low: var(--sp-surface-container-low);
+  --color-surface-container: var(--sp-surface-container);
+  --color-surface-container-high: var(--sp-surface-container-high);
+  --color-surface-container-highest: var(--sp-surface-container-highest);
+  --color-on-surface: var(--sp-on-surface);
+  --color-on-surface-variant: var(--sp-on-surface-variant);
+  --color-inverse-surface: var(--sp-inverse-surface);
+  --color-inverse-on-surface: var(--sp-inverse-on-surface);
+  --color-outline: var(--sp-outline);
+  --color-outline-variant: var(--sp-outline-variant);
+  --color-surface-tint: var(--sp-surface-tint);
+
+  --color-primary: var(--sp-primary);
+  --color-on-primary: var(--sp-on-primary);
+  --color-primary-container: var(--sp-primary-container);
+  --color-on-primary-container: var(--sp-on-primary-container);
+  --color-inverse-primary: var(--sp-inverse-primary);
+  --color-primary-fixed: var(--sp-primary-fixed);
+  --color-primary-fixed-dim: var(--sp-primary-fixed-dim);
+  --color-on-primary-fixed: var(--sp-on-primary-fixed);
+  --color-on-primary-fixed-variant: var(--sp-on-primary-fixed-variant);
+
+  --color-secondary: var(--sp-secondary);
+  --color-on-secondary: var(--sp-on-secondary);
+  --color-secondary-container: var(--sp-secondary-container);
+  --color-on-secondary-container: var(--sp-on-secondary-container);
+  --color-secondary-fixed: var(--sp-secondary-fixed);
+  --color-secondary-fixed-dim: var(--sp-secondary-fixed-dim);
+  --color-on-secondary-fixed: var(--sp-on-secondary-fixed);
+  --color-on-secondary-fixed-variant: var(--sp-on-secondary-fixed-variant);
+
+  --color-tertiary: var(--sp-tertiary);
+  --color-on-tertiary: var(--sp-on-tertiary);
+  --color-tertiary-container: var(--sp-tertiary-container);
+  --color-on-tertiary-container: var(--sp-on-tertiary-container);
+  --color-tertiary-fixed: var(--sp-tertiary-fixed);
+  --color-tertiary-fixed-dim: var(--sp-tertiary-fixed-dim);
+  --color-on-tertiary-fixed: var(--sp-on-tertiary-fixed);
+  --color-on-tertiary-fixed-variant: var(--sp-on-tertiary-fixed-variant);
+
+  --color-error: var(--sp-error);
+  --color-on-error: var(--sp-on-error);
+  --color-error-container: var(--sp-error-container);
+  --color-on-error-container: var(--sp-on-error-container);
+
+  --font-display-lg: 'Hanken Grotesk', system-ui, sans-serif;
+  --font-display-lg-mobile: 'Hanken Grotesk', system-ui, sans-serif;
+  --font-headline-md: 'Hanken Grotesk', system-ui, sans-serif;
+  --font-body-lg: 'Hanken Grotesk', system-ui, sans-serif;
+  --font-body-md: 'Hanken Grotesk', system-ui, sans-serif;
+  --font-mono-label: 'JetBrains Mono', ui-monospace, monospace;
+  --font-mono-sm: 'JetBrains Mono', ui-monospace, monospace;
+
+  --text-display-lg: 64px;
+  --text-display-lg--line-height: 1.1;
+  --text-display-lg--letter-spacing: -0.04em;
+  --text-display-lg--font-weight: 600;
+  --text-display-lg-mobile: 40px;
+  --text-display-lg-mobile--line-height: 1.1;
+  --text-display-lg-mobile--letter-spacing: -0.04em;
+  --text-display-lg-mobile--font-weight: 600;
+  --text-headline-md: 32px;
+  --text-headline-md--line-height: 1.2;
+  --text-headline-md--letter-spacing: -0.02em;
+  --text-headline-md--font-weight: 500;
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 1.7;
+  --text-body-md: 16px;
+  --text-body-md--line-height: 1.6;
+  --text-mono-label: 13px;
+  --text-mono-label--line-height: 1.5;
+  --text-mono-label--letter-spacing: 0.02em;
+  --text-mono-label--font-weight: 500;
+  --text-mono-sm: 12px;
+  --text-mono-sm--line-height: 1.5;
+
+  --radius-DEFAULT: 0.5rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+
+  --spacing-canvas-margin: 4rem;
+  --spacing-canvas-margin-mobile: 1.5rem;
+  --spacing-gutter: 2rem;
+  --spacing-section-gap: 8rem;
+  --spacing-stack-sm: 0.5rem;
+  --spacing-stack-md: 1rem;
+  --spacing-stack-lg: 2rem;
+
+  --shadow-ambient: 0 10px 30px -10px rgba(28, 28, 30, 0.05);
+}
+
+/* Studio Precision — light theme (default) */
+:root {
+  --sp-background: #f9f9ff;
+  --sp-on-background: #151c27;
+  --sp-surface: #f9f9ff;
+  --sp-surface-dim: #d3daea;
+  --sp-surface-bright: #f9f9ff;
+  --sp-surface-variant: #dce2f3;
+  --sp-surface-container-lowest: #ffffff;
+  --sp-surface-container-low: #f0f3ff;
+  --sp-surface-container: #e7eefe;
+  --sp-surface-container-high: #e2e8f8;
+  --sp-surface-container-highest: #dce2f3;
+  --sp-on-surface: #151c27;
+  --sp-on-surface-variant: #434847;
+  --sp-inverse-surface: #2a313d;
+  --sp-inverse-on-surface: #ebf1ff;
+  --sp-outline: #747877;
+  --sp-outline-variant: #c4c7c6;
+  --sp-surface-tint: #5d5f5e;
+
+  --sp-primary: #5d5f5e;
+  --sp-on-primary: #ffffff;
+  --sp-primary-container: #fafaf9;
+  --sp-on-primary-container: #727372;
+  --sp-inverse-primary: #c6c7c6;
+  --sp-primary-fixed: #e2e2e2;
+  --sp-primary-fixed-dim: #c6c7c6;
+  --sp-on-primary-fixed: #1a1c1c;
+  --sp-on-primary-fixed-variant: #454747;
+
+  --sp-secondary: #5f5e60;
+  --sp-on-secondary: #ffffff;
+  --sp-secondary-container: #e2dfe1;
+  --sp-on-secondary-container: #636264;
+  --sp-secondary-fixed: #e4e2e4;
+  --sp-secondary-fixed-dim: #c8c6c8;
+  --sp-on-secondary-fixed: #1b1b1d;
+  --sp-on-secondary-fixed-variant: #474649;
+
+  --sp-tertiary: #006a63;
+  --sp-on-tertiary: #ffffff;
+  --sp-tertiary-container: #e8fffb;
+  --sp-on-tertiary-container: #218078;
+  --sp-tertiary-fixed: #9cf2e8;
+  --sp-tertiary-fixed-dim: #80d5cb;
+  --sp-on-tertiary-fixed: #00201d;
+  --sp-on-tertiary-fixed-variant: #00504a;
+
+  --sp-error: #ba1a1a;
+  --sp-on-error: #ffffff;
+  --sp-error-container: #ffdad6;
+  --sp-on-error-container: #93000a;
+}
+
+/* Studio Precision — dark theme */
+.dark {
+  --sp-background: #1c1c1e;
+  --sp-on-background: #fafaf9;
+  --sp-surface: #131315;
+  --sp-surface-dim: #131315;
+  --sp-surface-bright: #39393b;
+  --sp-surface-variant: #353437;
+  --sp-surface-container-lowest: #0e0e10;
+  --sp-surface-container-low: #1b1b1d;
+  --sp-surface-container: #1f1f21;
+  --sp-surface-container-high: #2a2a2c;
+  --sp-surface-container-highest: #353437;
+  --sp-on-surface: #e4e2e4;
+  --sp-on-surface-variant: #bdc9c6;
+  --sp-inverse-surface: #e4e2e4;
+  --sp-inverse-on-surface: #303032;
+  --sp-outline: #889391;
+  --sp-outline-variant: #3e4947;
+  --sp-surface-tint: #80d5cb;
+
+  --sp-primary: #80d5cb;
+  --sp-on-primary: #003733;
+  --sp-primary-container: #0f766e;
+  --sp-on-primary-container: #a3faef;
+  --sp-inverse-primary: #006a63;
+  --sp-primary-fixed: #9cf2e8;
+  --sp-primary-fixed-dim: #80d5cb;
+  --sp-on-primary-fixed: #00201d;
+  --sp-on-primary-fixed-variant: #00504a;
+
+  --sp-secondary: #6b7280;
+  --sp-on-secondary: #2f3130;
+  --sp-secondary-container: #454747;
+  --sp-on-secondary-container: #b4b5b4;
+  --sp-secondary-fixed: #e2e2e2;
+  --sp-secondary-fixed-dim: #c6c7c6;
+  --sp-on-secondary-fixed: #1a1c1c;
+  --sp-on-secondary-fixed-variant: #454747;
+
+  --sp-tertiary: #c0c7d6;
+  --sp-on-tertiary: #2a313d;
+  --sp-tertiary-container: #636a78;
+  --sp-on-tertiary-container: #e4ebfb;
+  --sp-tertiary-fixed: #dce2f3;
+  --sp-tertiary-fixed-dim: #c0c7d6;
+  --sp-on-tertiary-fixed: #151c27;
+  --sp-on-tertiary-fixed-variant: #404754;
+
+  --sp-error: #ffb4ab;
+  --sp-on-error: #690005;
+  --sp-error-container: #93000a;
+  --sp-on-error-container: #ffdad6;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+}
+
+.border-whisper {
+  border-color: color-mix(in srgb, var(--color-on-surface) 8%, transparent);
+}
+
+.shadow-ambient {
+  box-shadow: var(--shadow-ambient);
+}

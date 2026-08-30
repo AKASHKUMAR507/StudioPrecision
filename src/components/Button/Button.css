@@ -1,0 +1,35 @@
+.btn {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.btn:hover {
+  opacity: 0.85;
+}
+
+.btn--primary {
+  background: var(--color-neutral-300);
+  color: var(--color-secondary);
+}
+
+.btn--secondary {
+  background: var(--color-secondary-100);
+  color: var(--color-secondary);
+}
+
+.btn--inverted {
+  background: var(--color-secondary);
+  color: var(--color-primary);
+}
+
+.btn--outlined {
+  background: transparent;
+  color: var(--color-secondary);
+  border-color: var(--color-border);
+}

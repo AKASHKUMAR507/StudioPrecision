@@ -1,0 +1,17 @@
+.skeleton-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.skeleton-lines__bar {
+  display: block;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-neutral-500);
+}
+
+.skeleton-lines__bar--accent {
+  background: var(--color-tertiary-700);
+}
