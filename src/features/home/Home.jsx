@@ -22,8 +22,8 @@ function HeroSection() {
             React Native Developer.
           </h1>
           <p className="mt-4 max-w-2xl text-body-lg font-body-lg leading-relaxed text-secondary md:text-headline-md md:font-headline-md">
-            Engineering precise, fluid mobile experiences. 3 years shipping technical solutions in Fintech, Health
-            Tech, and large-scale Cataloging.
+            Engineering precise, fluid mobile experiences. 3+ years shipping production apps in Fintech and consumer
+            domains.
           </p>
         </div>
         <a

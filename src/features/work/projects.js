@@ -1,111 +1,106 @@
 export const PROJECTS = [
   {
-    slug: 'ledge-pay',
+    slug: 'seeds',
     tag: 'Fintech',
-    title: 'Ledge Pay',
+    title: 'Seeds',
     summary:
-      'Solving complex cross-border settlements with a resilient, offline-first mobile architecture. Rebuilt the core transaction engine to handle highly volatile network conditions.',
-    tags: ['React Native', 'Redux', 'TypeScript'],
+      'A micro-lending loan management app enabling loans up to ₹3L for small business owners and women entrepreneurs, built around a three-role field approval workflow.',
+    tags: ['React Native', 'OCR', 'Geolocation'],
     hero: {
       badge: 'FINTECH APP',
       description:
-        'A seamless React Native mobile application designed to simplify cross-border transactions for modern freelancers and remote teams.',
-      liveUrl: "https://github.com/AKASHKUMAR507",
+        'End-to-end development of a micro-financing platform used across a multi-role approval workflow — from field data capture to final credit validation.',
+      liveUrl: null,
     },
     challenge: {
-      title: 'Fragmented Workflows',
+      title: 'Manual, Fragmented Loan Approvals',
       description:
-        'Freelancers were juggling multiple apps to track invoices, receive payments, and manage expenses, leading to delayed payments and high conversion fees.',
+        'Small-business and women-led loan applications required data capture, identity verification, and credit checks to be coordinated across three separate field roles, with no unified digital workflow.',
     },
     solution: {
-      title: 'Unified Ecosystem',
+      title: 'Multi-Role Approval Workflow',
       description:
-        'We architected a centralized React Native platform that integrates real-time ledger management with instant multi-currency settlement APIs, wrapped in a frictionless UI.',
+        'Built a three-role workflow — Regional Officer (Aadhaar/PAN OCR, Equifax CIBIL scoring initiation), Branch Manager (geolocation verification within 100m, voice interviews), and Branch Credit Manager (final validation) — on a reusable custom form-validation framework, with PennyDrop bank verification and Firebase/Sentry.io for distribution and monitoring.',
     },
     stack: [
-      { name: 'React Native (Expo)', role: 'Frontend Framework' },
-      { name: 'TypeScript', role: 'Type Safety' },
+      { name: 'React Native', role: 'Frontend Framework' },
+      { name: 'Equifax CIBIL API', role: 'Credit Scoring' },
+      { name: 'Google Maps API', role: 'Geolocation Verification' },
+      { name: 'Firebase & Sentry.io', role: 'Distribution & Monitoring' },
+    ],
+    metrics: [
+      { value: '₹3L', label: 'Max Loan Amount' },
+      { value: '3', label: 'Approval Roles' },
+      { value: '4+', label: 'APIs Integrated' },
+    ],
+    next: 'worldref',
+  },
+  {
+    slug: 'worldref',
+    tag: 'Consumer Apps',
+    title: 'WorldRef Mobile Apps',
+    summary:
+      'Engineered and launched mobile apps on the Play Store and App Store, growing engagement by 25% and reaching a 4.9-star rating while cutting app size by 80%.',
+    tags: ['React Native', 'TypeScript', 'Zustand'],
+    hero: {
+      badge: 'CONSUMER APPS',
+      description:
+        'End-to-end mobile engineering — a reusable component library and TypeScript-based MVC architecture, UI/UX redesign, and in-app camera capture.',
+      liveUrl: null,
+    },
+    challenge: {
+      title: 'Slow, Inconsistent Delivery',
+      description:
+        'The existing codebase lacked a shared component library or consistent architecture, slowing feature delivery and leaving the app bloated and harder to maintain.',
+    },
+    solution: {
+      title: 'Reusable Architecture & UX Overhaul',
+      description:
+        'Built a reusable React Native component library on a TypeScript-based MVC architecture, redesigned the UI/UX, and added in-app vision-camera capture, while integrating Sentry, Zustand, and AsyncStorage for faster, more reliable data handling.',
+    },
+    stack: [
+      { name: 'React Native', role: 'Frontend Framework' },
+      { name: 'TypeScript', role: 'MVC Architecture' },
       { name: 'Zustand', role: 'State Management' },
-      { name: 'Stripe Connect API', role: 'Payment Infrastructure' },
+      { name: 'Sentry', role: 'Error Tracking' },
     ],
     metrics: [
-      { value: '2.5M', label: 'Transactions Processed' },
+      { value: '25%', label: 'Engagement Growth' },
       { value: '4.9', label: 'App Store Rating' },
-      { value: '40%', label: 'Faster Load Times' },
+      { value: '80%', label: 'App Size Reduction' },
     ],
-    next: 'vitalis',
+    next: 'mobiloitte-projects',
   },
   {
-    slug: 'vitalis',
-    tag: 'Health Tech',
-    title: 'Vitalis',
+    slug: 'mobiloitte-projects',
+    tag: 'Internship',
+    title: 'Component Library & API Layer',
     summary:
-      'Real-time patient monitoring for remote clinics. Engineered custom Native Modules for reliable Bluetooth Low Energy (BLE) peripheral communication and WebSockets for live telemetry streams.',
-    tags: ['Native Modules', 'WebSockets', 'BLE'],
+      'Designed accessible, reusable UI components in React Native and integrated REST APIs with Axios, cutting development time by 40%.',
+    tags: ['React Native', 'JavaScript', 'Axios'],
     hero: {
-      badge: 'HEALTH TECH',
+      badge: 'REACT NATIVE INTERNSHIP',
       description:
-        'A remote patient-monitoring app streaming live vitals from bedside devices to clinicians over resilient WebSocket connections.',
-      liveUrl: "https://github.com/AKASHKUMAR507",
+        'Early hands-on work building a reusable component library and connecting front-end screens to backend services during a React Native internship at Mobiloitte.',
+      liveUrl: null,
     },
     challenge: {
-      title: 'Unreliable Device Telemetry',
+      title: 'Repetitive UI Work',
       description:
-        'Remote clinics relied on manual vitals logging, so critical changes in patient condition surfaced late and BLE peripherals dropped connection under real-world network conditions.',
+        'Screens across the app rebuilt similar UI patterns from scratch, with no standard way to wire front-end views to backend data.',
     },
     solution: {
-      title: 'Native BLE Bridge',
+      title: 'Shared Component Library',
       description:
-        'We engineered custom Native Modules for reliable Bluetooth Low Energy peripheral communication paired with a WebSocket layer for continuous, low-latency telemetry streaming to clinicians.',
+        'Designed a reusable, accessible component library in React Native and JavaScript, and integrated REST APIs with Axios for consistent front-end/back-end communication.',
     },
     stack: [
       { name: 'React Native', role: 'Frontend Framework' },
-      { name: 'Native Modules', role: 'BLE Bridge' },
-      { name: 'WebSockets', role: 'Live Telemetry' },
-      { name: 'Redux', role: 'State Management' },
+      { name: 'JavaScript', role: 'Core Language' },
+      { name: 'Axios', role: 'REST API Integration' },
     ],
-    metrics: [
-      { value: '99.9%', label: 'Connection Uptime' },
-      { value: '<200ms', label: 'Telemetry Latency' },
-      { value: '30+', label: 'Clinics Onboarded' },
-    ],
-    next: 'index-c',
-  },
-  {
-    slug: 'index-c',
-    tag: 'Cataloging',
-    title: 'Index-C',
-    summary:
-      'High-performance inventory management for large-scale retail environments. Utilized Realm for ultra-fast local search and established robust CI/CD pipelines for daily internal distribution.',
-    tags: ['React Native', 'Realm DB', 'CI/CD'],
-    hero: {
-      badge: 'CATALOGING',
-      description:
-        'A high-performance inventory management app built for large-scale retail environments with thousands of SKUs per store.',
-      liveUrl: "https://github.com/AKASHKUMAR507",
-    },
-    challenge: {
-      title: 'Slow, Offline-Unfriendly Search',
-      description:
-        'Store associates needed to search massive product catalogs instantly, even on unreliable warehouse Wi-Fi, but the legacy web portal required a constant connection and could not keep up.',
-    },
-    solution: {
-      title: 'Local-First Catalog',
-      description:
-        'We rebuilt the catalog on Realm for ultra-fast local search and indexing, with daily internal CI/CD distribution keeping every store on the latest inventory data without a full reinstall.',
-    },
-    stack: [
-      { name: 'React Native', role: 'Frontend Framework' },
-      { name: 'Realm DB', role: 'Local-First Storage' },
-      { name: 'CI/CD', role: 'Daily Distribution' },
-      { name: 'TypeScript', role: 'Type Safety' },
-    ],
-    metrics: [
-      { value: '10k+', label: 'SKUs Indexed Locally' },
-      { value: '120ms', label: 'Avg. Search Time' },
-      { value: '200+', label: 'Store Devices' },
-    ],
-    next: 'ledge-pay',
+    metrics: [{ value: '40%', label: 'Faster Development Time' }],
+    next: 'seeds',
   },
 ]
 
