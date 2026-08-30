@@ -4,32 +4,44 @@ import { SITE } from '../../config/site'
 import { revealClass, useReveal } from '../../hooks/useReveal'
 
 const ARSENAL = [
-  { icon: 'terminal', title: 'Core & Languages', items: ['JavaScript', 'TypeScript', 'Swift', 'Kotlin'] },
-  { icon: 'widgets', title: 'Frameworks', items: ['React Native', 'React', 'Expo', 'Next.js'] },
-  { icon: 'architecture', title: 'Tools & State', items: ['Redux', 'Zustand', 'Jest', 'CI/CD'] },
+  {
+    icon: 'terminal',
+    title: 'Languages & Native',
+    items: ['JavaScript', 'TypeScript', 'Java', 'Kotlin', 'Swift'],
+  },
+  {
+    icon: 'widgets',
+    title: 'Mobile Frameworks',
+    items: ['React Native', 'New Architecture', 'React.js', 'Redux', 'Zustand'],
+  },
+  {
+    icon: 'architecture',
+    title: 'Backend, Cloud & Tools',
+    items: ['Firebase', 'MongoDB', 'Sentry.io', 'CI/CD', 'Git & GitHub'],
+  },
 ]
 
 const EXPERIENCE = [
   {
-    period: '2022 — Present',
-    role: 'Senior React Native Engineer',
-    company: 'Fintech Innovations Inc.',
+    period: 'Jan 2025 — Present',
+    role: 'Software Developer',
+    company: 'Plugseal Innovation Services Pvt Ltd',
     description:
-      'Architected and maintained the primary consumer mobile application used by over 2M users. Implemented robust state management and optimized rendering performance, reducing TTI by 40%. Led the migration to a unified design system.',
+      'Leading end-to-end development of Seeds, a micro-lending loan management app with a three-role approval workflow (Regional Officer, Branch Manager, Branch Credit Manager). Integrated OCR, Equifax CIBIL scoring, PennyDrop bank verification, and Google Maps geolocation into a reusable form-validation framework, with Firebase App Distribution and Sentry.io monitoring for QA and error tracking.',
   },
   {
-    period: '2020 — 2022',
-    role: 'Mobile Developer',
-    company: 'HealthTech Solutions',
+    period: 'Jun 2023 — Dec 2024',
+    role: 'Software Developer',
+    company: 'WorldRef Technology',
     description:
-      'Developed a cross-platform patient portal app focusing on strict accessibility standards and secure data handling (HIPAA compliance). Integrated complex BLE features for medical device syncing.',
+      'Engineered and launched mobile apps on the Play Store and App Store, growing engagement by 25% and reaching a 4.9-star rating. Reduced app size by 80%, built a reusable component library on a TypeScript-based MVC architecture, and integrated Sentry, Zustand, and AsyncStorage — cutting bug resolution time by 60% and boosting data-handling efficiency by 50%.',
   },
   {
-    period: '2019 — 2020',
-    role: 'Frontend Engineer',
-    company: 'Global Cataloging Systems',
+    period: 'Jan 2023 — Jun 2023',
+    role: 'React Native Developer Intern',
+    company: 'Mobiloitte',
     description:
-      'Built high-performance list rendering solutions for massive inventory datasets. Transitioned legacy web portals to React, establishing the foundation for future mobile initiatives.',
+      'Designed accessible UIs and built a reusable React Native component library, cutting development time by 40%. Integrated REST APIs with Axios for seamless front-end/back-end data communication.',
   },
 ]
 
@@ -42,13 +54,15 @@ function Hero() {
           Engineering native experiences with precision and intent.
         </h1>
         <p className="max-w-2xl text-body-lg font-body-lg text-on-surface-variant">
-          I'm a React Native developer with a focus on building robust, high-performance applications. With over
-          three years of dedicated experience across Fintech, Health Tech, and complex Cataloging systems, I bridge
-          the gap between elegant design and rigorous engineering.
+          I'm a React Native developer with 3+ years building and shipping production mobile apps in fintech and
+          consumer domains, with working exposure to native Android (Kotlin/Java) and iOS (Swift/Objective-C), React
+          Native's New Architecture (Fabric/TurboModules), and CI/CD pipelines. I bridge the gap between elegant
+          design and rigorous engineering.
         </p>
         <div className="flex gap-stack-md pt-4">
           <a
             href={SITE.resumeUrl}
+            download
             className="rounded-full bg-tertiary px-8 py-3 font-mono-label text-mono-label text-on-tertiary transition-colors hover:bg-tertiary/90 active:translate-y-px"
           >
             Download CV
