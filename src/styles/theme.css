@@ -197,14 +197,14 @@
   --sp-on-secondary-fixed: #1a1c1c;
   --sp-on-secondary-fixed-variant: #454747;
 
-  --sp-tertiary: #c0c7d6;
-  --sp-on-tertiary: #2a313d;
-  --sp-tertiary-container: #636a78;
-  --sp-on-tertiary-container: #e4ebfb;
-  --sp-tertiary-fixed: #dce2f3;
-  --sp-tertiary-fixed-dim: #c0c7d6;
-  --sp-on-tertiary-fixed: #151c27;
-  --sp-on-tertiary-fixed-variant: #404754;
+  --sp-tertiary: #006a63;
+  --sp-on-tertiary: #ffffff;
+  --sp-tertiary-container: #e8fffb;
+  --sp-on-tertiary-container: #218078;
+  --sp-tertiary-fixed: #9cf2e8;
+  --sp-tertiary-fixed-dim: #80d5cb;
+  --sp-on-tertiary-fixed: #00201d;
+  --sp-on-tertiary-fixed-variant: #00504a;
 
   --sp-error: #ffb4ab;
   --sp-on-error: #690005;
