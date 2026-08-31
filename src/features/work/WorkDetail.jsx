@@ -43,11 +43,13 @@ export function WorkDetail() {
         </div>
         <div className="relative col-span-12 mt-stack-lg md:col-span-6 md:mt-0">
           {project.hero.image ? (
-            <img
-              src={project.hero.image}
-              alt={`${project.title} preview`}
-              className="mx-auto w-full max-w-[480px] rounded-2xl border border-whisper shadow-ambient"
-            />
+            <div className="mx-auto w-full max-w-[320px] overflow-hidden rounded-[3rem] border border-whisper bg-surface-container-lowest p-4 shadow-ambient">
+              <img
+                src={project.hero.image}
+                alt={`${project.title} preview`}
+                className="w-full rounded-[2.5rem]"
+              />
+            </div>
           ) : (
             <div className="mx-auto aspect-[9/19] w-full max-w-[320px] overflow-hidden rounded-[3rem] border border-whisper bg-surface-container-lowest p-4 shadow-ambient">
               <ImagePlaceholder label={`${project.title} app screen`} className="h-full w-full rounded-[2.5rem]" />
