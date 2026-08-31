@@ -1,4 +1,5 @@
 import { Highlight, themes } from 'prism-react-renderer'
+import { useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { Icon } from '../../components/ui/Icon'
 import { ImagePlaceholder } from '../../components/ui/ImagePlaceholder'
@@ -33,6 +34,17 @@ function detectLanguage(filename = '') {
 function CodeWindow({ filename, code, lang }) {
   const language = lang || detectLanguage(filename)
   const lines = code.trim().split('\n')
+  const [copied, setCopied] = useState(false)
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'))
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // clipboard access unavailable — silently ignore
+    }
+  }
 
   return (
     <div className="my-12 overflow-hidden rounded-xl border border-black/40 shadow-ambient">
@@ -45,6 +57,14 @@ function CodeWindow({ filename, code, lang }) {
         {filename ? (
           <span className="text-mono-sm font-mono-sm text-white/60">{filename}</span>
         ) : null}
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="ml-auto flex items-center gap-1.5 rounded px-2 py-1 text-mono-sm font-mono-sm text-white/50 transition-colors hover:bg-white/10 hover:text-white/90"
+        >
+          <Icon name={copied ? 'check' : 'content_copy'} className="text-[16px]" />
+          {copied ? 'Copied' : 'Copy'}
+        </button>
       </div>
       <Highlight theme={themes.vsDark} code={lines.join('\n')} language={language}>
         {({ tokens, getLineProps, getTokenProps }) => (
