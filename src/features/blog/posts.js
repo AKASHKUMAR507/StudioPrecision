@@ -119,14 +119,26 @@ export const OptimizedList = ({ data }) => {
       },
 
       { type: 'heading', text: '1. App Signing — Android Keystore & iOS Certificates' },
+      { type: 'subheading', text: 'What?' },
       {
         type: 'paragraph',
         text: "Every Android and iOS app is cryptographically signed before it can be installed or updated. On Android that's a keystore (.jks/.keystore) file; on iOS it's a certificate and provisioning profile chain managed through your Apple Developer account. The signature is the OS's way of proving an app really came from its developer.",
       },
+      { type: 'subheading', text: 'Why?' },
       {
         type: 'paragraph',
-        text: "This matters for two security-critical reasons, not just build-pipeline plumbing. First, identity and anti-impersonation: the OS won't run an unsigned or mismatched-signature app, which stops attackers from repackaging yours as a fake. Second, update integrity: an update can only overwrite an existing install if it's signed with the same key — the exact mechanism that prevents someone from pushing a malicious 'update' to a banking or health app already on a user's device. For fintech and healthtech specifically, losing or leaking a signing key isn't a minor incident — it can mean permanent loss of app identity (legacy Android signing) or re-provisioning every device (iOS), and a leaked key can sign malware that impersonates your app.",
+        text: 'Two reasons this matters, and both are security-critical, not just build-pipeline plumbing:',
       },
+      {
+        type: 'list',
+        ordered: true,
+        items: [
+          "Identity & anti-impersonation — the OS won't run an unsigned or mismatched-signature app, which stops attackers from repackaging your app as a fake.",
+          "Update integrity — an update can only overwrite an existing app if it's signed with the same key. This is the exact mechanism that prevents someone from pushing a malicious 'update' to a banking or health app on a user's device.",
+          "For fintech/healthtech specifically: losing or leaking a signing key isn't a minor incident — it can mean permanent loss of app identity (Android legacy) or a full re-provisioning of every device (iOS), and a leaked key can be used to sign malware that impersonates your app.",
+        ],
+      },
+      { type: 'subheading', text: 'How?' },
       { type: 'subheading', text: 'Android: two signing models' },
       {
         type: 'paragraph',
@@ -171,6 +183,7 @@ end`,
       },
 
       { type: 'heading', text: '2. Keychain (iOS) & Keystore (Android) — Secure Storage' },
+      { type: 'subheading', text: 'What?' },
       {
         type: 'paragraph',
         text: "This is about where sensitive data lives on-device — auth tokens, refresh tokens, biometric flags, PINs. Not regular app data (AsyncStorage/MMKV is fine for that), but the stuff that causes real damage if it leaks: a session token that lets someone impersonate a logged-in user, or a health record cached for offline use.",
@@ -179,10 +192,12 @@ end`,
         type: 'paragraph',
         text: "iOS Keychain is a system-level encrypted storage service, separate from your app's sandbox — the OS manages the encryption, tied to the device's hardware security. Android Keystore is different in an important way that trips people up: it isn't a place to store your data directly, it's a place to store cryptographic keys that never leave secure hardware. You use those keys to encrypt/decrypt data you then store separately, usually in SharedPreferences or a file. iOS Keychain stores the secret itself; Android Keystore stores the key used to protect the secret, not the secret.",
       },
+      { type: 'subheading', text: 'Why?' },
       {
         type: 'paragraph',
         text: "Regular storage isn't encrypted by default and is trivially readable — on a rooted Android device, SharedPreferences XML files can be read in plain text with basic file access. This is where a large share of real mobile breaches happen: not from breaking encryption, but from finding sensitive data that was never encrypted in the first place. A pentest report on a banking app will almost always start by dumping local storage and checking what's readable. Storing a refresh token in AsyncStorage means anyone with physical access, or malware with storage-read permission on a rooted device, gets a token that mints new access tokens indefinitely — no password required.",
       },
+      { type: 'subheading', text: 'How?' },
       {
         type: 'paragraph',
         text: "In React Native you don't talk to Keychain/Keystore directly — a library abstracts both platforms behind one API and routes to the right native mechanism underneath.",
@@ -218,10 +233,12 @@ await Keychain.resetGenericPassword({ service: 'com.myapp.auth' });`,
       },
 
       { type: 'heading', text: '3. Encrypted Storage for Structured Data' },
+      { type: 'subheading', text: 'What?' },
       {
         type: 'paragraph',
         text: "Keychain/Keystore are built for small key-value secrets — one token, one password. For larger structured data — a cached user profile, offline health records, a settings object with sensitive fields — react-native-encrypted-storage is a drop-in encrypted replacement for AsyncStorage: same API shape, but everything written through it is encrypted using the platform's secure key storage underneath.",
       },
+      { type: 'subheading', text: 'How?' },
       {
         type: 'code',
         filename: 'secureProfile.ts',
@@ -265,14 +282,17 @@ async function clearSecureStorage() {
       },
 
       { type: 'heading', text: '4. Token Refresh Flow & Refresh Token Rotation' },
+      { type: 'subheading', text: 'What?' },
       {
         type: 'paragraph',
         text: "This is the mechanism behind staying logged in without re-entering a password every few minutes, while limiting the damage if a token is stolen. An access token is short-lived (5–15 minutes) and sent with every API request. A refresh token is long-lived (days to weeks), stored securely, and used only to mint a new access token — never sent to regular API endpoints. Refresh token rotation means every use of a refresh token also issues a brand-new refresh token and invalidates the old one, so refresh tokens are single-use rather than reusable indefinitely.",
       },
+      { type: 'subheading', text: 'Why?' },
       {
         type: 'paragraph',
         text: "The whole design answers one question: if a token is stolen, how much damage happens, and for how long? A single long-lived token means a leak — via logs, a compromised device, a MITM — gives permanent access until manually revoked. Short-lived access tokens cap the blast radius to a few minutes. Rotation adds a second layer: if a stolen refresh token is used by an attacker, the legitimate user's next refresh attempt fails, because their old token was already invalidated by the attacker's use — that failure is your signal that theft happened, and the server can respond by revoking the whole token family and forcing re-login.",
       },
+      { type: 'subheading', text: 'How?' },
       {
         type: 'list',
         items: [
@@ -343,14 +363,29 @@ api.interceptors.response.use(
       },
 
       { type: 'heading', text: '5. Certificate Pinning' },
+      { type: 'subheading', text: 'What?' },
       {
         type: 'paragraph',
         text: "Certificate pinning hardcodes which TLS certificate or public key your app trusts for its API, instead of trusting any certificate the device's OS considers valid. Even if a certificate authority is compromised or an attacker obtains a fraudulent-but-technically-valid certificate for your domain, the app refuses to talk to it unless it matches the pin. Normal HTTPS trusts the OS's list of hundreds of CAs; pinning narrows that to 'only this exact certificate, or one signed by this exact key.'",
       },
+      { type: 'subheading', text: 'Why?' },
       {
         type: 'paragraph',
-        text: "Regular HTTPS protects against passive eavesdropping but not a MITM attacker presenting a valid certificate — one issued by a real-but-tricked or malicious CA, or installed via a malicious root certificate on a rooted/jailbroken device or a corporate proxy. Without pinning, the app has no way to distinguish your real API from an attacker in between with a legitimate-looking cert. This is specifically what tools like mitmproxy, Charles Proxy, and Burp Suite rely on to intercept traffic during a pentest — pinning stops that cold, and OWASP MASVS explicitly checks for it on apps handling financial or health data. It also directly defends the exact tokens covered in the refresh-flow section above, by protecting the transport layer that carries them.",
+        text: "Regular HTTPS protects you from passive eavesdropping, but it doesn't fully protect you from a Man-in-the-Middle (MITM) attack where the attacker presents a valid certificate — one issued by a real (but tricked, compromised, or malicious) CA, or one installed via a malicious root certificate on a rooted/jailbroken device or a corporate MITM proxy. Without pinning, your app has no way to tell the difference between talking to your real API and talking to an attacker sitting in between with a 'legitimate-looking' cert.",
       },
+      {
+        type: 'paragraph',
+        text: 'For fintech/healthtech this is one of the highest-value security controls you can add, because:',
+      },
+      {
+        type: 'list',
+        items: [
+          "It's specifically what tools like mitmproxy/Charles Proxy/Burp Suite rely on to intercept traffic during a pentest or reverse-engineering attempt — pinning is what stops that cold.",
+          'Regulators and security audits (OWASP MASVS) explicitly check for pinning on apps handling financial or health data.',
+          'It directly defends against attackers trying to steal the exact tokens you just spent protecting — pinning protects the transport layer that carries those tokens.',
+        ],
+      },
+      { type: 'subheading', text: 'How?' },
       {
         type: 'table',
         headers: ['Strategy', 'What is pinned', 'Trade-off'],
@@ -423,18 +458,33 @@ openssl enc -base64`,
       },
 
       { type: 'heading', text: '6. Code Obfuscation — ProGuard/R8 for Android' },
+      { type: 'subheading', text: 'What?' },
       {
         type: 'paragraph',
         text: 'Obfuscation transforms compiled Android code so it is much harder for a human to read while staying functionally identical. R8 is the modern default in the Android Gradle Plugin, and it obfuscates, shrinks unused code, and optimizes in one pass — renaming classes, methods, and variables to meaningless short names, stripping unused code paths and debug logging, and restructuring control flow to make it harder to follow.',
       },
+      { type: 'subheading', text: 'Why?' },
       {
         type: 'paragraph',
-        text: "This is Android-specific and not encryption. Java/Kotlin bytecode decompiles back into readable-ish source relatively easily without protection; iOS apps compile to native machine code, which is inherently harder to reverse-engineer, so there's no direct iOS equivalent to this specific tool. Without obfuscation, anyone can decompile your APK with jadx or apktool and get back source that's often readable enough to understand business logic, find hardcoded values, spot API endpoints, and — most dangerously — spot security mistakes you didn't know you'd made. It's also a named control category in OWASP MASVS audits: 'resiliency against reverse engineering.'",
+        text: "Without obfuscation, anyone can download your APK, run it through a decompiler (jadx, apktool), and get back Java/Kotlin source code that's often readable enough to understand your business logic, find hardcoded values, spot API endpoints, and — most dangerously — find security mistakes you didn't know you'd made.",
+      },
+      {
+        type: 'paragraph',
+        text: 'For fintech/healthtech specifically, this matters because:',
+      },
+      {
+        type: 'list',
+        items: [
+          "It raises the cost of reverse-engineering — a determined attacker can still eventually get through it (obfuscation is not a real security boundary on its own), but it stops casual/automated attacks and slows down serious ones enough to matter.",
+          "It's explicitly checked in OWASP MASVS audits — 'resiliency against reverse engineering' is a named control category for regulated apps.",
+          'It reduces the chance that hardcoded API keys, internal endpoint names, or business logic (like fraud-detection thresholds) leak to someone poking around a decompiled APK.',
+        ],
       },
       {
         type: 'note',
-        text: 'Obfuscation is a speed bump, not a lock. A determined attacker can still get through it eventually — it should never be the reason sensitive data or keys are considered safe. That job belongs to Keychain/Keystore, server-side validation, and certificate pinning.',
+        text: "The honest caveat, and this is an important interview-level nuance: obfuscation is a speed bump, not a lock. Never treat it as your actual security boundary — it should never be the reason sensitive data or keys are 'safe.' That job belongs to Keychain/Keystore, server-side validation, and certificate pinning. Obfuscation just makes casual and automated reverse-engineering harder; it doesn't stop a skilled, motivated attacker.",
       },
+      { type: 'subheading', text: 'How?' },
       {
         type: 'code',
         filename: 'android/app/build.gradle',
@@ -483,10 +533,33 @@ jadx -d output_folder app-release.apk
       },
 
       { type: 'heading', text: '7. Payments & Compliance — PCI-DSS, ATT, GDPR' },
+      { type: 'subheading', text: 'What?' },
       {
         type: 'paragraph',
-        text: 'These three keep showing up together because they share the same underlying discipline: know exactly what data you touch, minimize how much of it you handle directly, and be able to prove or act on that at any time. PCI-DSS is a security standard for payment card data. App Tracking Transparency (ATT) is Apple’s framework requiring consent before cross-app/website tracking. GDPR is an EU privacy regulation governing collection, processing, and storage of personal data, and giving users rights to access, correct, delete, and object.',
+        text: 'PCI-DSS is a security standard for protecting payment card information. We generally avoid handling or storing raw card details ourselves and use compliant payment providers.',
       },
+      {
+        type: 'paragraph',
+        text: "App Tracking Transparency is Apple's iOS privacy framework that requires apps to request user permission before tracking users across apps and websites, particularly for advertising-related tracking.",
+      },
+      {
+        type: 'paragraph',
+        text: 'GDPR is an EU privacy regulation that governs how organizations collect, process, store, and share personal data and gives users rights such as access, correction, deletion, and objection.',
+      },
+      { type: 'subheading', text: 'Why?' },
+      {
+        type: 'paragraph',
+        text: 'These three keep showing up together because they all boil down to the same underlying engineering discipline: know exactly what data you’re touching, minimize how much of it you handle directly, and be able to prove or act on that at any time.',
+      },
+      {
+        type: 'list',
+        items: [
+          "PCI-DSS: if your app code ever sees a raw card number, your entire app falls into a strict compliance scope (audits, encryption requirements, network segmentation). Most companies avoid this entirely by never letting card data touch their own servers or app code — instead using a payment processor's SDK that handles it for you.",
+          "ATT: get this wrong (track without consent, or use tracking-adjacent SDKs without declaring them) and Apple will reject your app at review, or pull it later. This isn't optional for any app using ad SDKs, analytics that fingerprint users across apps, or certain attribution tools.",
+          "GDPR: a user has a legal right to ask to delete all their data, and you must actually be able to do it — across your database, backups, analytics tools, and any third-party processor you send their data to (Sentry, Mixpanel, etc.). For healthtech this compounds with HIPAA's own retention rules, which sometimes conflict with GDPR deletion rights — a genuinely tricky area senior engineers get asked about.",
+        ],
+      },
+      { type: 'subheading', text: 'How?' },
       { type: 'subheading', text: 'PCI-DSS: reduce scope by never touching the card number' },
       {
         type: 'paragraph',
@@ -578,10 +651,17 @@ async function requestATT() {
       },
 
       { type: 'heading', text: '8. Biometric Authentication' },
+      { type: 'subheading', text: 'What?' },
       {
         type: 'paragraph',
-        text: "Face ID, Touch ID, and fingerprint auth all match biometrics in secure hardware — your app never sees the biometric data, only a pass/fail result. The common mistake is using biometrics as a UI gate only: show a prompt, navigate on success, while the real data was reachable anyway through another path. The correct approach ties biometric success directly to unlocking a stored key, so no code path bypasses it.",
+        text: "Face ID, Touch ID, and fingerprint auth all match biometrics in secure hardware — your app never sees the biometric data, only a pass/fail result.",
       },
+      { type: 'subheading', text: 'Why?' },
+      {
+        type: 'paragraph',
+        text: "The common mistake is using biometrics as a UI gate only: show a prompt, navigate on success, while the real data was reachable anyway through another path. The correct approach ties biometric success directly to unlocking a stored key, so no code path bypasses it.",
+      },
+      { type: 'subheading', text: 'How?' },
       {
         type: 'paragraph',
         text: "react-native-keychain handles this rather than a separate library. Store the secret with accessControl: BIOMETRY_CURRENT_SET, so the key auto-locks if enrolled biometrics change — enrolling a new fingerprint makes the old key inaccessible. Retrieving the secret is itself the biometric prompt, a single call rather than two separate steps.",
@@ -632,23 +712,32 @@ async function authenticateUser() {
       },
 
       { type: 'heading', text: '9. HIPAA — PHI Handling, Encryption, and Audit Logging' },
+      { type: 'subheading', text: 'What?' },
       {
         type: 'paragraph',
         text: 'HIPAA is US federal law governing healthcare data. As a mobile engineer, two of its rules matter directly: the Security Rule sets technical requirements for protecting ePHI (electronic PHI) — encryption, access controls, audit trails — and the Privacy Rule governs who is allowed to see PHI and under what circumstances, even internally at your own company.',
       },
-      {
-        type: 'paragraph',
-        text: "In practice this maps onto everything above with a healthcare-specific bar. Encryption at rest means PHI cached on-device belongs in react-native-encrypted-storage, never plain AsyncStorage — the same rule as before, just non-negotiable here. Access controls mean minimum necessary access: a support engineer's debug tooling shouldn't surface a full medical record just because it's technically reachable in the same database. Audit logging means every read or write of PHI needs a record of who accessed what and when — not the PHI content itself, just the access event — which is what lets you answer 'who looked at this patient's record on this date' during an audit or a breach investigation.",
-      },
+      { type: 'subheading', text: 'Why?' },
       {
         type: 'paragraph',
         text: "Any third-party processor that touches PHI on your behalf — a crash reporter, an analytics tool, a cloud host — needs a signed Business Associate Agreement (BAA) before that data reaches them. Sending crash breadcrumbs with patient data to a vendor without a BAA in place is a compliance violation independent of whether the data ever actually leaks.",
       },
-
-      { type: 'heading', text: '10. OWASP MASVS/MASTG Checklist' },
+      { type: 'subheading', text: 'How?' },
       {
         type: 'paragraph',
-        text: 'MASVS (Mobile Application Security Verification Standard) is a structured set of security requirements grouped into categories — what "secure" actually means for a mobile app. MASTG (Mobile Application Security Testing Guide) is its companion: the concrete techniques testers use to verify whether an app meets those requirements. MASVS is the checklist of what should be true; MASTG is how to go check. Real pentest firms and regulated-industry audits are built around this standard — a pentest report on a bank or healthtech app is almost always structured against MASVS categories.',
+        text: "In practice this maps onto everything above with a healthcare-specific bar. Encryption at rest means PHI cached on-device belongs in react-native-encrypted-storage, never plain AsyncStorage — the same rule as before, just non-negotiable here. Access controls mean minimum necessary access: a support engineer's debug tooling shouldn't surface a full medical record just because it's technically reachable in the same database. Audit logging means every read or write of PHI needs a record of who accessed what and when — not the PHI content itself, just the access event — which is what lets you answer 'who looked at this patient's record on this date' during an audit or a breach investigation.",
+      },
+
+      { type: 'heading', text: '10. OWASP MASVS/MASTG Checklist' },
+      { type: 'subheading', text: 'What?' },
+      {
+        type: 'paragraph',
+        text: 'MASVS (Mobile Application Security Verification Standard) is a structured set of security requirements grouped into categories — what "secure" actually means for a mobile app. MASTG (Mobile Application Security Testing Guide) is its companion: the concrete techniques testers use to verify whether an app meets those requirements. MASVS is the checklist of what should be true; MASTG is how to go check.',
+      },
+      { type: 'subheading', text: 'Why?' },
+      {
+        type: 'paragraph',
+        text: 'Real pentest firms and regulated-industry audits are built around this standard — a pentest report on a bank or healthtech app is almost always structured against MASVS categories.',
       },
       {
         type: 'table',
@@ -664,6 +753,7 @@ async function authenticateUser() {
           ['MASVS-PRIVACY', 'Data minimization, user privacy'],
         ],
       },
+      { type: 'subheading', text: 'How?' },
       {
         type: 'paragraph',
         text: 'The practical way to use MASVS as an engineer is as a self-audit checklist, not reading material — go through it and honestly answer for your own app.',
@@ -719,18 +809,30 @@ grep "android:allowBackup" android/app/src/main/AndroidManifest.xml`,
       },
 
       { type: 'heading', text: '11. Root/Jailbreak Detection' },
+      { type: 'subheading', text: 'What?' },
       {
         type: 'paragraph',
         text: "Rooting and jailbreaking are processes that remove a device's built-in security restrictions, granting full administrative access — reading any app's private storage directly, bypassing sandbox isolation, hooking into running processes, modifying system behavior. Detection is code that checks whether the app is currently running on such a device, so it can respond, usually by blocking sensitive functionality.",
       },
+      { type: 'subheading', text: 'Why?' },
       {
         type: 'paragraph',
-        text: "Almost every protection covered so far assumes the OS sandbox is intact, and root/jailbreak breaks that assumption. Hardware-backed keys generally remain protected — that's the whole point of the Secure Enclave/TEE — but the surrounding sandbox is gone, so other data like unencrypted caches or in-memory secrets becomes trivially readable. Obfuscation becomes easier to defeat, since root access enables tools that hook into the running app and inspect memory directly. Certificate pinning can potentially be bypassed with tools like SSL Kill Switch or Frida scripts that patch pinning logic at runtime.",
+        text: "Almost every protection you've built in this tracker so far assumes the OS sandbox is intact. Root/jailbreak breaks that assumption:",
+      },
+      {
+        type: 'list',
+        ordered: true,
+        items: [
+          "Keystore/Keychain protection weakens — while hardware-backed keys generally remain protected even on rooted devices (that's the whole point of Secure Enclave/TEE), the surrounding app sandbox is gone, so other data (unencrypted caches, in-memory secrets) becomes trivially readable.",
+          'Obfuscation becomes easier to defeat — root access enables tools that hook into your running app and inspect memory/behavior directly, bypassing static obfuscation.',
+          'Certificate pinning can potentially be bypassed — rooted devices can install tools (like SSL Kill Switch, Frida scripts) that patch pinning logic at runtime.',
+        ],
       },
       {
         type: 'note',
-        text: 'Root/jailbreak detection can always be bypassed by a sufficiently skilled attacker — tools like Magisk Hide/Zygisk exist specifically to hide root. It is a speed bump, not a wall, but it stops the vast majority of casual attackers and automated tooling, and it is a required checkbox for compliance audits regardless of its theoretical bypassability.',
+        text: 'Important honest caveat: root/jailbreak detection can always be bypassed by a sufficiently skilled attacker (there are tools like Magisk Hide/Zygisk specifically built to hide root from apps). So this is, like obfuscation, a speed bump, not an absolute wall — but it stops the vast majority of casual attackers and automated tooling, and it’s a required checkbox for compliance audits regardless of its theoretical bypassability.',
       },
+      { type: 'subheading', text: 'How?' },
       {
         type: 'code',
         filename: 'deviceIntegrity.ts',
@@ -750,11 +852,30 @@ function checkDeviceIntegrity() {
       },
       {
         type: 'paragraph',
-        text: 'On Android, jail-monkey checks for root management apps (Magisk Manager), the su binary in common paths, writable system partitions, and known root-related packages. On iOS it checks for jailbreak-associated files (Cydia.app, /bin/bash, sshd), whether the app can write outside its sandbox, and suspicious dynamic libraries loaded into the process.',
+        text: "What's actually happening under the hood (this is the part worth understanding, not just calling the library):",
+      },
+      { type: 'subheading', text: 'Android checks include:' },
+      {
+        type: 'list',
+        items: [
+          'Presence of root management apps (Superuser.apk, Magisk Manager)',
+          'Checking for su binary in common paths (/system/bin/su, /system/xbin/su)',
+          "Testing whether system partitions are writable (they shouldn't be on a stock device)",
+          'Checking for known root-related packages via PackageManager',
+        ],
+      },
+      { type: 'subheading', text: 'iOS checks include:' },
+      {
+        type: 'list',
+        items: [
+          'Checking for jailbreak-associated files (/Applications/Cydia.app, /bin/bash, /usr/sbin/sshd)',
+          'Testing whether the app can write outside its normal sandbox (fopen to /private/ succeeding when it shouldn\'t)',
+          'Checking for suspicious dynamic libraries loaded into the process',
+        ],
       },
       {
         type: 'paragraph',
-        text: 'The real design decision is where and how to respond — gated by the sensitivity of the specific action, not a blanket app-wide rule.',
+        text: 'Applying the check — where and how to respond (this is the actual design decision): it depends on the data sensitivity of the specific action, not a blanket app-wide rule.',
       },
       {
         type: 'code',
@@ -781,10 +902,12 @@ function ViewBalanceScreen() {
       },
 
       { type: 'heading', text: '12. Anti-Tampering / RASP' },
+      { type: 'subheading', text: 'Why?' },
       {
         type: 'paragraph',
         text: 'jail-monkey already includes basic hook detection for some Frida/Xposed signatures, but real anti-tampering depth in a regulated app usually layers in dedicated detection — either a native module or a commercial RASP SDK (Approov, DexGuard/iXGuard, Promon). These are worth knowing exist even without a license, since they come up in vendor security conversations at fintech/healthtech companies.',
       },
+      { type: 'subheading', text: 'How?' },
       {
         type: 'code',
         filename: 'fridaCheck.ts',
@@ -849,14 +972,29 @@ func isDebuggerAttached() -> Bool {
       },
 
       { type: 'heading', text: '13. Screenshot & Screen-Recording Protection' },
+      { type: 'subheading', text: 'What?' },
       {
         type: 'paragraph',
         text: "This protects sensitive on-screen content — balances, card numbers, patient records, OTP codes — from being captured via screenshot, screen recording, or the OS's app-switcher thumbnail. That last surface is the one almost everyone forgets: double-tapping home or swiping to the app switcher makes the OS snapshot your last-rendered frame for the thumbnail.",
       },
+      { type: 'subheading', text: 'Why?' },
       {
         type: 'paragraph',
-        text: "Malware with screen-capture permission on Android can silently screenshot the app in the foreground, capturing balances, PHI, or OTP codes with no user awareness. On shared/managed devices — common in healthtech, like a clinic's shared tablet — the app-switcher thumbnail showing a patient's name and diagnosis is visible to the next person who picks it up, no attack required at all. This is directly checked under MASVS-PLATFORM.",
+        text: "Screenshots feel like a minor concern compared to encryption or pinning, but they're a real, frequently-exploited leak path:",
       },
+      {
+        type: 'list',
+        items: [
+          "Malware with screen-capture permission on Android can silently screenshot your app while it's in the foreground, capturing balances, PHI, or OTP codes without the user ever knowing.",
+          "Shared/managed devices (common in healthtech — a shared tablet at a clinic) — the app switcher thumbnail showing a patient's name and diagnosis is visible to the next person who picks up the device, no attack required at all.",
+          'Screen recording software (legitimate or malicious) running on the device can capture everything, including biometric-gated screens, since screen recording happens after your app has already rendered the unlocked content.',
+        ],
+      },
+      {
+        type: 'paragraph',
+        text: 'This is directly checked under MASVS-PLATFORM. For fintech, this specifically matters for balance screens, card details, and transfer confirmations. For healthtech, it\'s patient records, diagnosis info, and anything with a name attached to health data.',
+      },
+      { type: 'subheading', text: 'How?' },
       {
         type: 'code',
         filename: 'screenSecurity.ts (Android)',
@@ -924,14 +1062,29 @@ function SensitiveScreen() {
       },
 
       { type: 'heading', text: '14. Clipboard Security' },
+      { type: 'subheading', text: 'What?' },
       {
         type: 'paragraph',
         text: "The clipboard is a system-wide shared resource — anything copied by any app can be read by any other app, with some OS-level restrictions added in recent years. This covers two concerns: auto-clearing sensitive data your own app puts on the clipboard, and disabling copy on sensitive display fields so users or malware can't extract data like full card numbers.",
       },
+      { type: 'subheading', text: 'Why?' },
       {
         type: 'paragraph',
-        text: "This is an overlooked leak path because it feels like a convenience feature, not a security surface. iOS 14+ and Android 12+ added notifications when an app reads the clipboard, but plenty of malware still monitors it, and many devices don't have these protections. If an app copies an OTP to make 'paste to verify' convenient, and the user switches apps, that OTP sits readable by whatever's next — including malware polling the clipboard for OTP-shaped strings. This is a named MASVS-PLATFORM concern.",
+        text: 'The clipboard is one of the most overlooked leak paths because it feels like a convenience feature, not a security surface. But:',
       },
+      {
+        type: 'list',
+        items: [
+          'Any app with clipboard read access can read what you copied — historically this was completely silent (any app, anytime); iOS 14+ and Android 12+ added user notifications when an app reads the clipboard, but plenty of malware still monitors it, and many devices/OS versions don\'t have these protections.',
+          'If your app copies an OTP code to make "paste to verify" convenient, and the user then switches to another app, that OTP sits on the clipboard readable by whatever\'s next — including malicious apps designed specifically to poll the clipboard for OTP-shaped strings.',
+          "For fintech: users sometimes copy full account/routing numbers or card numbers to paste elsewhere — if your app doesn't restrict this, that sensitive data now exists in a system-wide buffer with no encryption, accessible until overwritten.",
+        ],
+      },
+      {
+        type: 'paragraph',
+        text: 'This is explicitly a MASVS-PLATFORM concern — audits check whether sensitive data appears on the clipboard unnecessarily or persists there.',
+      },
+      { type: 'subheading', text: 'How?' },
       {
         type: 'code',
         filename: 'clipboard.ts',
@@ -984,24 +1137,42 @@ async function copyOTPWithAutoClear(otp) {
       },
 
       { type: 'heading', text: '15. Hardware-Backed Keys — Secure Enclave & Keystore Attestation' },
+      { type: 'subheading', text: 'What?' },
       {
         type: 'paragraph',
         text: "This is the hardware layer underneath everything above. On iOS, the Secure Enclave is a physically separate coprocessor with its own encrypted memory — private keys generated there never exist in plaintext anywhere the main OS or apps can read, even under a full jailbreak. Face ID/Touch ID matching happens inside it, and a key marked as Secure Enclave-backed can require biometric or passcode confirmation on every use. On Android, the equivalent is the Android Keystore backed by a Trusted Execution Environment (TEE) or, on newer high-end devices, a StrongBox Secure Element — a physically separate security chip. Keys generated with setIsStrongBoxBacked(true) live in that isolated hardware; the app only ever holds a handle to the key, never the key material.",
       },
+      { type: 'subheading', text: 'Why?' },
       {
         type: 'paragraph',
         text: "Attestation is what turns 'we generated a hardware key' into a claim you can actually verify server-side. Android's Key Attestation lets the app request a certificate chain, signed by Google, that proves a given key was generated inside genuine secure hardware on this specific device — not extracted, not software-emulated. Apple's equivalent is App Attest, which lets your backend confirm a request genuinely came from an unmodified copy of your app running on genuine Apple hardware. This matters because everything covered earlier — root detection, obfuscation, anti-tampering — is a client-side signal the client itself reports, and a compromised client can lie about all of it. Attestation is one of the few checks that's cryptographically hard to fake, because the proof is rooted in hardware the attacker doesn't control.",
       },
+      { type: 'subheading', text: 'How?' },
       {
         type: 'note',
         text: 'In practice, most React Native teams get this for free through react-native-keychain (which already uses Secure Enclave/StrongBox-backed keys where available) and treat direct attestation APIs as an advanced addition for the highest-risk flows — say, confirming a large transfer server-side — rather than something every screen needs to call directly.',
       },
 
       { type: 'heading', text: '16. CI/CD Secrets Management' },
+      { type: 'subheading', text: 'What?' },
       {
         type: 'paragraph',
-        text: "This covers how build/deploy pipelines handle passwords, API keys, signing credentials, and tokens — a keystore password, a Stripe API key, backend credentials for staging vs. production — without ever writing them into code or config that gets committed to git. If any of these land in a committed file, that secret is permanently in git history — deleting it in a later commit doesn't remove it from history unless the whole repo is rewritten. If the repo is ever exposed — accidentally made public, a former employee's access never revoked, a compromised dev laptop — every one of those secrets is compromised. This is a genuinely common real-world breach pattern: not sophisticated hacking, just someone finding an old commit with a plaintext key still in it.",
+        text: 'This is about how you handle passwords, API keys, signing credentials, and tokens used during your build/deploy pipeline — things like your keystore password, Stripe API keys, or backend auth tokens — without ever writing them directly into your code or config files that get committed to git.',
       },
+      { type: 'subheading', text: 'Why?' },
+      {
+        type: 'list',
+        items: [
+          'Android keystore password and iOS certificates',
+          'API keys for third-party services (Stripe, Sentry, push notification services)',
+          "Backend credentials your app needs to build against different environments (staging/production)",
+        ],
+      },
+      {
+        type: 'paragraph',
+        text: "If any of these end up hardcoded in a file that gets committed to git, that secret is now permanently in your git history — even if you delete it in a later commit, it's still recoverable from history unless you rewrite the entire repo. And if your repo is ever exposed (accidentally made public, a former employee's access wasn't revoked, a compromised dev laptop), every one of those secrets is compromised. This is a genuinely common real-world breach pattern — not sophisticated hacking, just someone finding an old commit with a plaintext API key still sitting in it.",
+      },
+      { type: 'subheading', text: 'How?' },
       {
         type: 'paragraph',
         text: "The rule: secrets live in the CI/CD platform's secret manager, injected as environment variables at build time, never in the repo.",
@@ -1034,20 +1205,31 @@ STRIPE_SECRET=sk_live_abc123xyz`,
         type: 'list',
         items: [
           'Always add .env to .gitignore.',
-          'Use a tool like git-secrets, or your host\'s push-protection, to catch accidental commits before they happen.',
-          'Periodically audit history for anything that slipped through: git log -p | grep -iE "api[_-]?key|password|secret"',
+          "Use a tool like git-secrets or GitHub's push-protection to catch accidental commits before they happen.",
         ],
+      },
+      {
+        type: 'paragraph',
+        text: "Worth doing right now: search your repo's history for any hardcoded key that might already be committed.",
+      },
+      {
+        type: 'code',
+        filename: 'shell',
+        code: `git log -p | grep -iE "api[_-]?key|password|secret" | head -20`,
       },
 
       { type: 'heading', text: '17. Session Policy — Auto-Lock & Step-Up Re-Auth' },
+      { type: 'subheading', text: 'What?' },
       {
         type: 'paragraph',
         text: 'This covers how long a logged-in session stays valid without re-verifying the user, and when to demand fresh verification even if the session is technically active. Auto-lock re-locks the app after a period of inactivity, even though the underlying token is still valid. Step-up authentication requires fresh verification before a specific high-risk action, regardless of when the app was last unlocked.',
       },
+      { type: 'subheading', text: 'Why?' },
       {
         type: 'paragraph',
         text: "A valid token doesn't mean the person currently holding the phone is the legitimate user — someone could pick up an unlocked, backgrounded phone and have full access to a session authenticated 20 minutes earlier by someone else. Phones get left on desks, handed to kids, glanced at by coworkers. Regulators and MASVS-AUTH expect a short inactivity window for high-sensitivity apps — typically 1–5 minutes, not the 30 minutes common in casual consumer apps — plus extra verification for the riskiest actions. A $10,000 transfer or opening a full medical record shouldn't rely on 'they unlocked the app four minutes ago.'",
       },
+      { type: 'subheading', text: 'How?' },
       {
         type: 'code',
         filename: 'useAutoLock.ts',
@@ -1117,10 +1299,12 @@ async function performAction(actionName, fn) {
       },
 
       { type: 'heading', text: '18. MFA/OTP Flows' },
+      { type: 'subheading', text: 'What?' },
       {
         type: 'paragraph',
         text: "Multi-factor authentication means requiring more than one type of proof before granting access — typically something you know (a password) plus something you have (a one-time code via SMS/email, or one generated by an authenticator app). SMS/email OTP has the server generate and send a code the user types back. TOTP (Time-based One-Time Password) has an authenticator app generate a new code every 30 seconds from a shared secret plus the current time, with no network round-trip needed to generate it.",
       },
+      { type: 'subheading', text: 'Why?' },
       {
         type: 'paragraph',
         text: "A password alone is something you know — if it leaks through phishing, a breach, or reuse from another site, that's the only barrier gone. MFA means a stolen password alone isn't enough. For fintech and healthtech this is frequently a regulatory requirement, not just best practice, and it's often exactly what step-up authentication means in practice on a new or unrecognized device where biometrics haven't been enrolled yet.",
@@ -1129,6 +1313,7 @@ async function performAction(actionName, fn) {
         type: 'note',
         text: 'SMS OTP is the weakest common form of MFA, vulnerable to SIM-swapping — an attacker convinces a carrier to port the victim\'s number to a SIM they control, intercepting the OTP entirely. TOTP has no such weakness, since the code is generated locally on-device rather than transmitted. This is a genuine, frequently-asked interview question: why is SMS OTP weaker than TOTP?',
       },
+      { type: 'subheading', text: 'How?' },
       {
         type: 'code',
         filename: 'otpFlow.ts',
@@ -1197,16 +1382,27 @@ function generateEnrollmentURI(secret, userEmail) {
   }
 }`,
       },
+      {
+        type: 'paragraph',
+        text: "The server must enforce this too — but showing the right UX (disabling the button, showing a cooldown) prevents legitimate users from hammering the endpoint and getting server-side locked out accidentally.",
+      },
+      {
+        type: 'note',
+        text: "Worth checking: whether your app currently supports MFA at all. If it's SMS-only, that's worth flagging as a known weaker option (SIM-swap risk) — consider whether TOTP or push-based approval (an 'approve this login' notification) would be a stronger addition for high-value accounts.",
+      },
 
       { type: 'heading', text: '19. Secure Logging' },
+      { type: 'subheading', text: 'What?' },
       {
         type: 'paragraph',
         text: "Secure logging means sensitive data never ends up in logs, crash reports, or analytics events — console.log, native Logcat/Xcode console output, crash reporters like Sentry or Crashlytics, and analytics tools like Mixpanel or Firebase Analytics all count. This is the single most common real-world leak path — not breaking encryption or bypassing pinning, but a developer logging something during debugging and forgetting to remove it, or a crash reporter automatically capturing local variable state that happened to contain PHI.",
       },
+      { type: 'subheading', text: 'Why?' },
       {
         type: 'paragraph',
         text: "Logcat is readable by other apps with the right permissions on older Android versions, and trivially readable over adb — a debug log with a token or SSN in it is a real leak. Crash reporters capture breadcrumbs, recent console logs, and network request details automatically; a patient record logged before a crash may now sit in a crash-reporting dashboard, visible to the whole engineering team, potentially without a BAA in place. Analytics is the sneakiest path of all — a well-meaning analytics.track('profile_updated', user) can silently ship an entire user object, PHI included, to a third party.",
       },
+      { type: 'subheading', text: 'How?' },
       {
         type: 'code',
         filename: 'logging.ts',
@@ -1292,14 +1488,28 @@ analytics.track('profile_updated', { user_id: user.id, updated_at: Date.now() })
       },
 
       { type: 'heading', text: '20. Security Testing Practice — MobSF & Threat Modeling (STRIDE)' },
+      { type: 'subheading', text: 'What?' },
       {
         type: 'paragraph',
         text: 'MobSF (Mobile Security Framework) is a free, open-source tool that automatically scans an APK/IPA for hardcoded secrets, missing pinning, weak crypto, insecure storage patterns, and permission misuse — an automated first-pass pentest. STRIDE is a structured way to think through how a feature could be attacked before or while building it, a mnemonic for six categories: Spoofing, Tampering, Repudiation, Information disclosure, Denial of service, Elevation of privilege.',
       },
+      { type: 'subheading', text: 'Why?' },
       {
         type: 'paragraph',
-        text: "Everything earlier in this guide is reactive knowledge — known problems paired with known solutions. MobSF and STRIDE are different: processes for finding problems not yet thought of, which is exactly what a real security review does before shipping, and what a real pentest firm will do whether or not you've prepared. MobSF gives a free, repeatable way to catch regressions — someone accidentally hardcodes an API key, or a new dependency introduces an insecure storage call — before it ships. STRIDE gives a repeatable question framework for new features, which is what actually separates an engineer who knows some security tricks from one who can walk into a design review and systematically reason about a new feature's attack surface.",
+        text: "Everything you've learned was reactive knowledge — specific known problems with specific known solutions (pinning, obfuscation, encrypted storage). MobSF and STRIDE are different: they're processes for finding problems you haven't thought of yet, which is exactly what a real security review does before an app ships, and what a real pentest firm will do to your app whether or not you've prepared.",
       },
+      {
+        type: 'paragraph',
+        text: 'For fintech/healthtech, this matters because:',
+      },
+      {
+        type: 'list',
+        items: [
+          "MobSF gives you a free, repeatable way to catch regressions — someone accidentally hardcodes an API key, or a new dependency introduces an insecure storage call — before it ships, not after a real pentest firm finds it (expensive) or an attacker finds it (catastrophic).",
+          'STRIDE gives you a repeatable question framework for new features, so security isn\'t just a fixed list of controls but a way of thinking that scales to problems no checklist ever covered. This is genuinely what separates a senior engineer who "knows some security tricks" from one who can walk into a design review and systematically reason about a new feature\'s attack surface.',
+        ],
+      },
+      { type: 'subheading', text: 'How?' },
       {
         type: 'code',
         filename: 'shell — run MobSF against a build',
