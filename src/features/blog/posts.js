@@ -83,24 +83,6 @@ export const OptimizedList = ({ data }) => {
       },
     ],
     prevSlug: 'optimizing-flatlist',
-    nextSlug: 'fintech-security',
-  },
-  {
-    slug: 'fintech-security',
-    title: 'Fintech Security Patterns',
-    date: '2024-04-15',
-    dateLabel: 'April 15, 2024',
-    readTime: '5 min read',
-    tags: ['Security', 'Fintech'],
-    excerpt:
-      'Implementing biometric auth and secure storage for banking apps. Reviewing best practices for Keychain/Keystore utilization, memory wiping, and guarding against reverse engineering in React Native applications.',
-    body: [
-      {
-        type: 'paragraph',
-        text: 'Implementing biometric auth and secure storage for banking apps. Reviewing best practices for Keychain/Keystore utilization, memory wiping, and guarding against reverse engineering in React Native applications.',
-      },
-    ],
-    prevSlug: 'native-modules',
     nextSlug: 'mobile-security-fintech-healthtech',
   },
   {
@@ -1553,7 +1535,7 @@ docker run -it -p 8000:8000 opensecurity/mobile-security-framework-mobsf
         text: "This becomes a habit rather than a one-time exercise by running MobSF as part of the release checklist — ideally wired into CI/CD — so every release gets scanned automatically, and by running a quick STRIDE pass during design review for any feature touching auth, payments, or PHI, before code is written rather than after.",
       },
     ],
-    prevSlug: 'fintech-security',
+    prevSlug: 'native-modules',
     nextSlug: null,
   },
 ]
