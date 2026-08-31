@@ -101,6 +101,17 @@ export function WorkDetail() {
             </span>
             <h2 className="text-headline-md font-headline-md text-on-surface">{project.companionApp.title}</h2>
             <p className="max-w-3xl text-body-md font-body-md text-on-surface-variant">{project.companionApp.description}</p>
+            {project.companionApp.liveUrl ? (
+              <a
+                href={project.companionApp.liveUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex w-fit items-center gap-2 rounded bg-tertiary px-6 py-3 font-mono-label text-mono-label text-on-tertiary transition-colors hover:bg-tertiary/90 active:translate-y-px"
+              >
+                View on Play Store
+                <Icon name="open_in_new" className="text-[18px]" />
+              </a>
+            ) : null}
             {project.companionApp.features?.length ? (
               <div className="mt-stack-sm grid grid-cols-1 gap-stack-md border-t border-outline-variant/20 pt-stack-md sm:grid-cols-2 md:grid-cols-3">
                 {project.companionApp.features.map((feature) => (

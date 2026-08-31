@@ -88,11 +88,12 @@ export const PROJECTS = [
     summary:
       'A unified mental-health platform for India — bringing therapy, self-guided tools, curated content, and a dedicated specialist companion app together into one connected system.',
     tags: ['React Native', 'TypeScript', 'Firebase'],
+    thumbnail: `${BASE_URL}images/work/psolvi/thumbnail.png`,
     hero: {
       badge: 'HEALTHTECH',
       description:
         'An organised mental-health system spanning two apps — Psolvi for users, and Psolvi Specialists for verified professionals — replacing the fragmentation of therapy, assessments, and habit tracking living in separate tools.',
-      liveUrl: null,
+      liveUrl: 'https://play.google.com/store/apps/details?id=com.mwellness&pcampaignid=web_share',
       image: `${BASE_URL}images/work/psolvi/hero.png`,
     },
     screenshots: [
@@ -145,6 +146,7 @@ export const PROJECTS = [
       title: 'Psolvi Specialists',
       description:
         "A professional companion app built exclusively for verified mental-health specialists on the platform — for conducting and managing online consultations, and coordinating the day-to-day of a practice in one place. It's intended for healthcare professionals only: it provides no automated medical advice, diagnosis, or treatment recommendations, and isn't meant for patient use.",
+      liveUrl: 'https://play.google.com/store/apps/details?id=com.psolvispecialists&pcampaignid=web_share',
       features: [
         { name: 'Availability', description: 'Scheduling and managing availability' },
         { name: 'Upcoming Appointments', description: 'Conducting and managing online consultations' },

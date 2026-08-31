@@ -112,7 +112,7 @@ function ProjectCard({ project, index }) {
           <img
             src={project.thumbnail}
             alt={`${project.title} preview`}
-            className="h-64 w-full rounded-lg bg-white object-contain md:h-80"
+            className="w-full rounded-lg bg-white"
           />
         ) : (
           <ImagePlaceholder label={`${project.title} preview`} className="h-64 w-full rounded-lg md:h-80" />
