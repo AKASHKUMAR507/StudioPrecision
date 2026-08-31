@@ -108,7 +108,15 @@ function ProjectCard({ project, index }) {
           imageFirst ? 'md:order-1 md:col-start-1' : 'md:order-2 md:col-start-7'
         }`}
       >
-        <ImagePlaceholder label={`${project.title} preview`} className="h-64 w-full rounded-lg md:h-80" />
+        {project.thumbnail ? (
+          <img
+            src={project.thumbnail}
+            alt={`${project.title} preview`}
+            className="h-64 w-full rounded-lg bg-white object-contain md:h-80"
+          />
+        ) : (
+          <ImagePlaceholder label={`${project.title} preview`} className="h-64 w-full rounded-lg md:h-80" />
+        )}
       </div>
     </article>
   )
