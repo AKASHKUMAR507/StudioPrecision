@@ -8,6 +8,9 @@ function BodyBlock({ block }) {
   if (block.type === 'heading') {
     return <h2 className="mb-6 mt-12 text-headline-md font-headline-md text-on-background">{block.text}</h2>
   }
+  if (block.type === 'subheading') {
+    return <h3 className="mb-3 mt-8 text-body-lg font-headline-md font-bold text-on-background">{block.text}</h3>
+  }
   if (block.type === 'code') {
     return (
       <div className="my-12 overflow-hidden rounded-xl border border-outline-variant/20 bg-surface-container-low shadow-ambient">
@@ -17,6 +20,52 @@ function BodyBlock({ block }) {
         <pre className="overflow-x-auto p-6">
           <code className="text-mono-sm font-mono-sm leading-relaxed text-on-surface-variant">{block.code}</code>
         </pre>
+      </div>
+    )
+  }
+  if (block.type === 'list') {
+    const ListTag = block.ordered ? 'ol' : 'ul'
+    return (
+      <ListTag className={`space-y-2 pl-6 text-body-md font-body-md leading-relaxed text-on-background/80 ${block.ordered ? 'list-decimal' : 'list-disc'}`}>
+        {block.items.map((item, i) => (
+          <li key={i}>{item}</li>
+        ))}
+      </ListTag>
+    )
+  }
+  if (block.type === 'note') {
+    return (
+      <div className="rounded-xl border border-tertiary/30 bg-tertiary-container px-6 py-5">
+        <p className="mb-1 text-mono-sm font-mono-sm uppercase tracking-wide text-tertiary">{block.label || 'Note'}</p>
+        <p className="text-body-md font-body-md leading-relaxed text-on-tertiary-container">{block.text}</p>
+      </div>
+    )
+  }
+  if (block.type === 'table') {
+    return (
+      <div className="my-8 overflow-x-auto rounded-xl border border-outline-variant/20 shadow-ambient">
+        <table className="w-full border-collapse text-body-md">
+          <thead>
+            <tr className="bg-surface-container-low">
+              {block.headers.map((h, i) => (
+                <th key={i} className="border-b border-outline-variant/20 px-4 py-3 text-left font-mono-label text-mono-label uppercase tracking-wide text-secondary">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {block.rows.map((row, i) => (
+              <tr key={i} className="border-b border-outline-variant/10 last:border-b-0">
+                {row.map((cell, j) => (
+                  <td key={j} className="px-4 py-3 align-top text-on-background/80">
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     )
   }
