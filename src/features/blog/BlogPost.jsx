@@ -118,6 +118,21 @@ function BodyBlock({ block }) {
       </div>
     )
   }
+  if (block.type === 'image') {
+    return (
+      <figure className="my-10">
+        <img
+          src={block.src}
+          alt={block.alt}
+          className="w-full rounded-xl border border-outline-variant/20 shadow-ambient"
+          loading="lazy"
+        />
+        {block.caption ? (
+          <figcaption className="mt-3 text-center text-mono-sm font-mono-sm text-secondary">{block.caption}</figcaption>
+        ) : null}
+      </figure>
+    )
+  }
   if (block.type === 'table') {
     return (
       <div className="my-8 overflow-x-auto rounded-xl border border-outline-variant/20 shadow-ambient">

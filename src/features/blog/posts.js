@@ -1,22 +1,68 @@
+const BASE_URL = import.meta.env.BASE_URL
+
 export const POSTS = [
   {
     slug: 'optimizing-flatlist',
     title: 'Optimizing FlatList for 10k+ items',
     date: '2024-05-12',
     dateLabel: 'May 12, 2024',
-    readTime: '6 min read',
+    readTime: '16 min read',
     tags: ['Performance', 'React Native'],
     excerpt:
-      "A deep dive into memory management and windowing techniques in React Native. Exploring initialNumToRender, maxToRenderPerBatch, and windowSize to maintain 60fps on low-end Android devices while rendering massive data sets.",
+      "A deep dive into windowing, the JS-to-native bridge, and every FlatList tuning prop that actually matters — plus a guided tour of the alternatives (FlashList, RecyclerListView, react-native-big-list, Legend List, and plain ScrollView) for when FlatList itself isn't enough.",
     body: [
       {
         type: 'paragraph',
-        text: "Rendering large lists in React Native is a notoriously tricky endeavor. When your FlatList data array crosses the threshold of a few hundred items, you might start noticing frame drops during rapid scrolling. By the time you hit 10,000 items, unoptimized lists will bring the JavaScript thread to its knees. Let's explore a systematic approach to reclaiming your 60fps target.",
+        text: "Rendering large lists in React Native is a notoriously tricky endeavor. When your data array crosses a few hundred items, you might start noticing frame drops during rapid scrolling. By the time you hit 10,000 items, an unoptimized list will bring the JS thread to its knees. This is a full walkthrough: how virtualization actually works under the hood, every FlatList prop worth tuning, and — since FlatList isn't always the right tool — a tour of the alternatives that exist specifically because FlatList has limits.",
       },
-      { type: 'heading', text: 'The Anatomy of a Bottleneck' },
+
+      { type: 'heading', text: 'How Virtualization Actually Works' },
       {
         type: 'paragraph',
-        text: 'The core issue stems from how React Native bridges communication between the JS thread and the native UI thread. Every time a new item scrolls into view, React must render the component, reconcile the virtual DOM, serialize the commands, and send them across the bridge. If the items are complex or if React is constantly re-rendering items that haven’t changed, the bridge becomes clogged.',
+        text: "A list of 10,000 rows does not mean 10,000 native views exist on screen. FlatList (and everything built like it) uses a technique called windowing, or virtualization: only the rows currently visible, plus a small buffer above and below, are ever mounted as real native components. Everything else exists purely as plain JavaScript data in the `data` array — no view, no layout, no memory cost — until it scrolls close enough to need rendering.",
+      },
+      {
+        type: 'image',
+        src: `${BASE_URL}images/blog/flatlist-windowing.png`,
+        alt: 'Diagram showing a row of 20 list items, most greyed out as off-screen, a light teal buffer zone, and a dark teal visible-on-screen zone in the middle',
+        caption: 'Only the visible rows plus a windowSize buffer are ever mounted as real native views.',
+      },
+      {
+        type: 'paragraph',
+        text: "As you scroll, FlatList mounts new cells entering the window and unmounts cells leaving it, continuously sliding this window across the data array. That's the whole trick — and it's also exactly where the cost comes from, because mounting isn't free.",
+      },
+
+      { type: 'heading', text: 'Where the Frame Budget Goes' },
+      {
+        type: 'paragraph',
+        text: "Every time a new row scrolls into the window, React has to render the component, reconcile it, and hand the resulting native commands to the host platform. In the classic (non-Fabric) bridge architecture, that hand-off is a real, measurable cost: commands are serialized to JSON, queued, sent across the bridge, deserialized on the other side, then measured, laid out, and painted by the native UI thread.",
+      },
+      {
+        type: 'image',
+        src: `${BASE_URL}images/blog/flatlist-bridge-flow.png`,
+        alt: 'Diagram showing JS Thread flowing through a Bridge (serialize and batch, then deserialize) into the Native UI Thread',
+        caption: 'Every mounted cell pays this round trip once — cheap alone, expensive at 10k rows and 60 scrolls/second.',
+      },
+      {
+        type: 'paragraph',
+        text: 'If your items are complex, or if React keeps re-rendering rows that haven\'t actually changed, this pipeline clogs and frames start dropping. Everything below exists to reduce how much work crosses this pipeline, and how often.',
+      },
+
+      { type: 'heading', text: "Tuning FlatList's Core Props" },
+      { type: 'subheading', text: 'getItemLayout — skip the measurement pass entirely' },
+      {
+        type: 'paragraph',
+        text: "By default, FlatList has to measure each row after it renders to know where it sits in the scroll container. getItemLayout lets you tell it the answer up front — if every row has a fixed height, this is a pure function of the index, so FlatList can skip measurement completely and jump straight to any offset. This is arguably the single most impactful optimization available, provided your rows have a predictable (even if not literally fixed) height.",
+      },
+      { type: 'subheading', text: 'keyExtractor — a stable identity per row' },
+      {
+        type: 'paragraph',
+        text: "React reconciles list children by key. An unstable or missing key (falling back to array index) makes React treat every reorder or insert as a full remount of everything after the change point. A stable key derived from the item's own id lets React correctly diff which rows actually changed.",
+      },
+      { type: 'subheading', text: 'renderItem — memoize the actual cell component' },
+      {
+        type: 'paragraph',
+        text: "renderItem itself being wrapped in useCallback only stops FlatList's own props from changing identity — it does nothing for the cell component underneath. Wrap the row component in React.memo (or use a PureComponent) so a parent re-render doesn't cascade into re-rendering every currently-mounted row.",
       },
       {
         type: 'code',
@@ -26,11 +72,15 @@ import { FlatList, ListRenderItem } from 'react-native';
 
 const ITEM_HEIGHT = 80;
 
+const MemoizedListItem = React.memo(function ListItem({ data }) {
+  return <Row data={data} />;
+});
+
 export const OptimizedList = ({ data }) => {
-  // 1. Stable key extractor
+  // stable identity per row — no fallback to array index
   const keyExtractor = useCallback((item) => item.id.toString(), []);
 
-  // 2. Pre-calculated layout dimensions
+  // skip the measurement pass entirely — fixed row height
   const getItemLayout = useCallback(
     (_, index) => ({
       length: ITEM_HEIGHT,
@@ -40,7 +90,6 @@ export const OptimizedList = ({ data }) => {
     []
   );
 
-  // 3. Memoized render function
   const renderItem: ListRenderItem<DataItem> = useCallback(({ item }) => {
     return <MemoizedListItem data={item} />;
   }, []);
@@ -54,14 +103,171 @@ export const OptimizedList = ({ data }) => {
       removeClippedSubviews={true}
       initialNumToRender={10}
       maxToRenderPerBatch={5}
+      updateCellsBatchingPeriod={50}
       windowSize={5}
     />
   );
 };`,
       },
       {
+        type: 'table',
+        headers: ['Prop', 'What it controls', 'Tuning notes'],
+        rows: [
+          ['initialNumToRender', 'Rows rendered synchronously on first mount', 'Set it to roughly what fills one screen — too high delays first paint.'],
+          ['maxToRenderPerBatch', 'Rows rendered per batch while scrolling', 'Lower values keep each frame cheaper but take more batches to fill the window.'],
+          ['updateCellsBatchingPeriod', 'Delay (ms) between render batches', 'Higher values trade a bit of latency for fewer, larger batches — good for weaker devices.'],
+          ['windowSize', 'How many "screens" worth of content stay rendered above/below the viewport', 'Default is 21 (10 above, 10 below, 1 visible) — often overkill; 5–7 is common for heavy rows.'],
+          ['removeClippedSubviews', 'Detaches native views that scroll fully offscreen (Android-focused)', 'Frees native memory faster, but can occasionally clip views mid-transition — test it.'],
+        ],
+      },
+      {
+        type: 'note',
+        text: 'These props interact with each other — a smaller windowSize with a larger maxToRenderPerBatch behaves very differently from the reverse. Change one at a time and profile on a real low-end device, not the simulator.',
+      },
+
+      { type: 'heading', text: 'Beyond FlatList: The Alternatives' },
+      {
         type: 'paragraph',
-        text: 'By implementing getItemLayout, we bypass the dynamic measurement phase entirely. This is arguably the single most impactful optimization you can make, provided your list items have a fixed height. Coupling this with proper memoization of the render function ensures that we only pay the rendering tax exactly once per unique item state.',
+        text: "Tuning props gets you a long way, but FlatList has a structural ceiling: it mounts and unmounts a fresh component instance for every row that crosses the window boundary. A newer generation of list libraries instead recycles a small, fixed pool of component instances and just swaps the data bound to them — no mount, no unmount, no new native view allocation as you scroll.",
+      },
+      {
+        type: 'image',
+        src: `${BASE_URL}images/blog/flatlist-recycling.png`,
+        alt: 'Side-by-side diagram: left panel shows FlatList/ScrollView creating and destroying new CellComponent instances; right panel shows FlashList/RecyclerListView reusing a fixed pool of instances with content swapped',
+        caption: 'Mounting a new instance per row vs. recycling a fixed pool and swapping their content.',
+      },
+      { type: 'subheading', text: 'ScrollView — no virtualization at all' },
+      {
+        type: 'paragraph',
+        text: "ScrollView renders every single child up front, all at once, with no windowing whatsoever. It's the right tool when the content is genuinely short and fully known (a settings screen, a short form) — never for a data-driven list that could grow past a couple dozen items. At 10,000 rows, a ScrollView will mount 10,000 native views immediately and the app will hang or crash.",
+      },
+      { type: 'subheading', text: 'FlatList & VirtualizedList — the React Native core' },
+      {
+        type: 'paragraph',
+        text: 'FlatList is a thin, ergonomic wrapper around VirtualizedList, the lower-level primitive that actually implements windowing (SectionList, for grouped/sectioned data, is the other wrapper around the same primitive). This is what everything in this post so far has been about — solid, well-supported, ships with React Native itself, but bound by the mount/unmount model above.',
+      },
+      { type: 'subheading', text: 'FlashList — @shopify/flash-list' },
+      {
+        type: 'paragraph',
+        text: "Shopify's drop-in FlatList replacement, built on a recycling model descended from RecyclerListView's core ideas but with a much simpler API — in most cases it's close to a prop-for-prop swap from FlatList. FlashList v2 (a ground-up rewrite) is the current version and only runs on React Native's New Architecture; it measures every item automatically, so the size-estimation props v1 required are gone entirely. The same discipline that made FlatList fast still applies — a stable keyExtractor and a memoized row component matter just as much here, since recycling only helps if the recycled component itself isn't re-rendering for no reason.",
+      },
+      {
+        type: 'code',
+        filename: 'OptimizedFlashList.tsx',
+        code: `import React, { useCallback } from 'react';
+import { FlashList, ListRenderItem } from '@shopify/flash-list';
+
+const MemoizedListItem = React.memo(function ListItem({ data }) {
+  return <Row data={data} />;
+});
+
+export const OptimizedFlashList = ({ data }) => {
+  // stable identity per row — same reasoning as FlatList's keyExtractor
+  const keyExtractor = useCallback((item) => item.id.toString(), []);
+
+  // memoized so recycled cells don't re-render for an unrelated parent update
+  const renderItem: ListRenderItem<DataItem> = useCallback(({ item }) => {
+    return <MemoizedListItem data={item} />;
+  }, []);
+
+  // for lists with more than one row shape — lets FlashList recycle
+  // a "message" cell only into another "message" cell, never into a "header"
+  const getItemType = useCallback((item) => item.type, []);
+
+  return (
+    <FlashList
+      data={data}
+      keyExtractor={keyExtractor}
+      renderItem={renderItem}
+      getItemType={getItemType}
+      // v2 measures every item itself — no estimatedItemSize needed.
+      // overrideItemLayout still exists in v2, but only for spans now
+      // (e.g. a "header" row spanning all columns in a grid); it no
+      // longer accepts a size hint the way v1's did
+      overrideItemLayout={(layout, item) => {
+        if (item.type === 'header') layout.span = numColumns;
+      }}
+      // trims work for rows that are offscreen but still in the
+      // recycling pool — raise this for chat-style lists that insert
+      // many rows above the viewport at once
+      drawDistance={250}
+    />
+  );
+};`,
+      },
+      {
+        type: 'table',
+        headers: ['Prop', 'What it controls', 'Tuning notes'],
+        rows: [
+          ['getItemType', 'Which recycling pool a row draws from', 'Essential once a list mixes row shapes — recycling a header into a tall card (and back) is more expensive than not recycling at all.'],
+          ['overrideItemLayout', 'Column span for a row, in v2 (size hints were removed)', 'Use it to make a specific row (e.g. a section header) span every column in a grid-style FlashList.'],
+          ['drawDistance', 'How far outside the viewport rows stay mounted (px)', 'Lower trims memory/render work; too low causes visible blank flashes on fast flings. Bump it for chat-style prepend-heavy lists.'],
+        ],
+      },
+      {
+        type: 'note',
+        text: "v2 is a breaking change from v1: estimatedItemSize, estimatedListSize, and the size hint in overrideItemLayout are all gone, and it requires the New Architecture. If a project is still on the legacy architecture or an older FlashList version, the v1 estimatedItemSize-based API still applies — check Shopify's migration guide before assuming this example works as-is.",
+      },
+      { type: 'subheading', text: 'RecyclerListView — recyclerlistview' },
+      {
+        type: 'paragraph',
+        text: "Originally built at Flipkart and the library FlashList's recycling model is conceptually descended from. It exposes the recycling machinery directly (layout providers, view types, data providers) rather than hiding it behind a FlatList-shaped API, which makes it more powerful for genuinely complex, multi-type layouts — grids mixed with rows, masonry-style lists — at the cost of a steeper learning curve and more verbose setup.",
+      },
+      {
+        type: 'code',
+        filename: 'RecyclerListViewExample.tsx',
+        code: `import { RecyclerListView, DataProvider, LayoutProvider } from 'recyclerlistview';
+
+const dataProvider = new DataProvider((r1, r2) => r1.id !== r2.id).cloneWithRows(data);
+
+const layoutProvider = new LayoutProvider(
+  () => 0, // single view type
+  (type, dim) => { dim.width = SCREEN_WIDTH; dim.height = 80; }
+);
+
+<RecyclerListView
+  dataProvider={dataProvider}
+  layoutProvider={layoutProvider}
+  rowRenderer={(type, item) => <Row data={item} />}
+/>`,
+      },
+      { type: 'subheading', text: 'react-native-big-list' },
+      {
+        type: 'paragraph',
+        text: "A smaller, community-maintained library aimed squarely at very large, mostly-uniform data sets. It's not a cell-recycling library like FlashList/RecyclerListView — it's a more aggressively-tuned virtualization layer with built-in support for headers, footers, sections, and empty states without pulling in SectionList separately. Worth evaluating for simpler, single-column data where you want more virtualization control than FlatList's props expose without adopting a full recycler API.",
+      },
+      { type: 'subheading', text: 'Legend List — @legendapp/list' },
+      {
+        type: 'paragraph',
+        text: "The newest entrant here, from the team behind Legend State. It takes a different approach again: rather than fixed-height recycling pools, it's built to handle variable-height content well (chat threads, feeds with mixed media) while still avoiding FlatList's full remount cost, and it's designed to integrate cleanly with Legend State's fine-grained reactivity if you're already using it. Younger and less battle-tested in production than FlashList or RecyclerListView, but worth watching for feed-style, variable-height UIs specifically.",
+      },
+      {
+        type: 'table',
+        headers: ['Library', 'Recycles views?', 'Best for', 'Trade-off'],
+        rows: [
+          ['ScrollView', 'No — renders everything', 'Short, fully-known content', 'Unusable past a few dozen items'],
+          ['FlatList / SectionList', 'No — mounts/unmounts per row', 'General-purpose lists, ships with RN', 'Mount/unmount cost caps performance ceiling'],
+          ['FlashList', 'Yes', 'Drop-in FlatList upgrade, most row shapes', 'v2 requires the New Architecture; v1-only projects use an older, estimate-based API'],
+          ['RecyclerListView', 'Yes', 'Complex multi-type layouts, grids/masonry', 'More setup, steeper API than FlatList-shaped libraries'],
+          ['react-native-big-list', 'No — tuned virtualization, not recycling', 'Very large, mostly-uniform single-column data', 'Smaller community than FlashList/RecyclerListView'],
+          ['Legend List', 'Partial — optimized for variable height', 'Chat/feed UIs with variable-height content', 'Newest option, least production track record'],
+        ],
+      },
+
+      { type: 'heading', text: 'Choosing the Right Tool' },
+      {
+        type: 'list',
+        items: [
+          "Content is short and fixed (a form, a settings page): ScrollView — virtualization would be pure overhead.",
+          'A general list, a few hundred to a couple thousand rows, reasonably uniform: FlatList, properly tuned with getItemLayout, keyExtractor, and memoized rows — no need to reach further.',
+          'Tens of thousands of rows, or visibly dropped frames on a tuned FlatList: FlashList first — it is the lowest-effort upgrade with the best-supported recycling model.',
+          'Complex, mixed-type layouts (grids, masonry, multiple cell shapes in one list): RecyclerListView — it exposes exactly the controls that kind of layout needs.',
+          "A chat thread or feed with genuinely variable-height content: Legend List is worth evaluating, with FlashList's auto-sizing v2 recycler as the more battle-tested fallback.",
+        ],
+      },
+      {
+        type: 'paragraph',
+        text: "None of these substitute for profiling on the actual lowest-end device your users carry. Measure dropped frames before optimizing, change one prop or one library at a time, and measure again — the right choice depends on your row complexity and data shape far more than on which library has the most GitHub stars.",
       },
     ],
     prevSlug: null,
