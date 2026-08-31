@@ -95,6 +95,15 @@ export const PROJECTS = [
       liveUrl: null,
       image: `${BASE_URL}images/work/psolvi/hero.png`,
     },
+    screenshots: [
+      { src: `${BASE_URL}images/work/psolvi/screen-consumer-therapy.png`, alt: 'Psolvi Therapy screen showing specialist search and booking' },
+      { src: `${BASE_URL}images/work/psolvi/screen-consumer-tools.png`, alt: 'Psolvi Tools screen showing Mood Map, Habit Tracker, podcasts, and self assessments' },
+      { src: `${BASE_URL}images/work/psolvi/screen-consumer-store.png`, alt: 'Psolvi Store screen showing curated wellness products' },
+      { src: `${BASE_URL}images/work/psolvi/screen-consumer-edu.png`, alt: 'Psolvi EDU screen showing awareness campaigns and personal journals' },
+      { src: `${BASE_URL}images/work/psolvi/screen-specialists-home.png`, alt: 'Psolvi Specialists home dashboard showing availability, resources, and upcoming schedule' },
+      { src: `${BASE_URL}images/work/psolvi/screen-specialists-calls.png`, alt: 'Psolvi Specialists calls screen showing recent patient calls' },
+      { src: `${BASE_URL}images/work/psolvi/screen-specialists-earnings.png`, alt: 'Psolvi Specialists earnings screen showing monthly earnings and payments' },
+    ],
     challenge: {
       title: 'Mental Health Support, Fragmented Across Apps',
       description:
