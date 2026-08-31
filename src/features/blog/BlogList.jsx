@@ -36,6 +36,8 @@ function PostRow({ post }) {
   )
 }
 
+const SORTED_POSTS = [...POSTS].sort((a, b) => new Date(b.date) - new Date(a.date))
+
 export function BlogList() {
   return (
     <div className="mx-auto w-full max-w-5xl px-canvas-margin-mobile py-section-gap md:px-canvas-margin">
@@ -49,7 +51,7 @@ export function BlogList() {
         </p>
       </header>
       <section className="flex flex-col">
-        {POSTS.map((post) => (
+        {SORTED_POSTS.map((post) => (
           <PostRow key={post.slug} post={post} />
         ))}
       </section>
