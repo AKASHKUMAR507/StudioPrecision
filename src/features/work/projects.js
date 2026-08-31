@@ -46,7 +46,7 @@ export const PROJECTS = [
       badge: 'CONSUMER APPS',
       description:
         'End-to-end mobile engineering — a reusable component library and TypeScript-based MVC architecture, UI/UX redesign, and in-app camera capture.',
-      liveUrl: null,
+      liveUrl: 'https://mi9.com/package/com.dealx/',
     },
     challenge: {
       title: 'Slow, Inconsistent Delivery',
