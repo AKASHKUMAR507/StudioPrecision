@@ -278,14 +278,348 @@ const layoutProvider = new LayoutProvider(
     title: 'Bridging the Gap: Custom Native Modules',
     date: '2024-04-28',
     dateLabel: 'April 28, 2024',
-    readTime: '8 min read',
+    readTime: '18 min read',
     tags: ['JSI', 'C++', 'Swift'],
     excerpt:
-      "When JS isn't enough—writing high-performance C++ and Swift bridges. A practical guide to circumventing the JavaScript bridge for computationally heavy tasks, complete with JSI implementation examples.",
+      "When JS isn't enough — a full walkthrough of writing native modules for React Native, both generations: the legacy async bridge (Kotlin + Swift) and JSI/TurboModules (with a shared C++ core), plus the threading pitfalls that only show up on a real device.",
     body: [
       {
         type: 'paragraph',
-        text: "When JS isn't enough—writing high-performance C++ and Swift bridges. A practical guide to circumventing the JavaScript bridge for computationally heavy tasks, complete with JSI implementation examples.",
+        text: "React Native gets you a long way without touching a line of Kotlin or Swift. But sooner or later something needs code JS genuinely can't do on its own — a heavy compute loop that can't drop frames, a hardware API with no JS equivalent, or an existing native SDK you're not about to rewrite in JavaScript. That's what a native module is: a bridge between your JS and platform-native code. This is a full walkthrough of building one both ways React Native supports today — the legacy asynchronous bridge, and JSI/TurboModules, the direct-binding model the New Architecture is built on — plus the pitfalls that only ever show up once you're running on a real device.",
+      },
+
+      { type: 'heading', text: 'Why Reach for Native Code at All' },
+      {
+        type: 'paragraph',
+        text: 'A native module is justified when at least one of these is true:',
+      },
+      {
+        type: 'list',
+        items: [
+          "You're wrapping an existing native SDK (payment providers, native maps, hardware manufacturer SDKs) that has no maintained JS wrapper.",
+          "You need a platform API with no JS equivalent — deep Bluetooth/NFC control, background audio session management, biometric hardware, custom camera pipelines.",
+          "You have a genuinely CPU-heavy operation — image processing, signal/audio processing, a custom crypto routine — where doing it in JS would visibly drop frames.",
+          "You need a synchronous call from JS into native code on a perf-critical path, which only JSI can give you at all.",
+        ],
+      },
+      {
+        type: 'note',
+        text: "Check the community first. Most of what looks like 'I need a native module' is already solved and maintained — react-native-permissions, react-native-mmkv, react-native-vision-camera, and dozens of others cover the overwhelming majority of these cases. Writing and maintaining your own native code is real, ongoing cost: every React Native upgrade is a chance for the native side to break in ways JS-only code never does.",
+      },
+
+      { type: 'heading', text: 'Two Generations: The Legacy Bridge and JSI' },
+      {
+        type: 'paragraph',
+        text: "React Native has shipped two fundamentally different ways for JS to talk to native code. The legacy bridge is asynchronous by design: every call gets serialized to JSON, queued, batched, and sent across to the native side, with the result serialized back the same way. JSI (JavaScript Interface) removes that entirely — JS holds a real, direct reference to a C++ object and calls its methods like any other JS object, synchronously if the method is written to support it, with no JSON in between. TurboModules are native modules built on JSI; they're the New Architecture's replacement for the legacy NativeModules system.",
+      },
+      {
+        type: 'image',
+        src: `${BASE_URL}images/blog/native-modules-bridge-vs-jsi.png`,
+        alt: 'Side-by-side diagram: left panel shows the legacy bridge serializing a call to JSON, queuing it, and resolving a Promise; right panel shows JSI making a direct synchronous C++ function call with no serialization',
+        caption: 'Same JS call, two structurally different paths to native code.',
+      },
+      {
+        type: 'paragraph',
+        text: "This isn't just an internal implementation detail — it changes what's possible. A legacy bridge module can only ever be async (everything returns a Promise or uses a callback), because the serialization round-trip has real latency. A JSI-backed module can expose a genuinely synchronous method, because there's no queue to wait on — the C++ function just runs and returns, in the same call stack as the JS that invoked it.",
+      },
+
+      { type: 'heading', text: 'Writing a Legacy Native Module' },
+      {
+        type: 'paragraph',
+        text: "Still worth knowing even on new projects — plenty of production apps and third-party libraries are still on the legacy bridge, and understanding it makes the New Architecture's design choices make a lot more sense. A legacy module needs three pieces: an Android implementation, an iOS implementation, and a JS-side type declaration.",
+      },
+      { type: 'subheading', text: 'Android — Kotlin' },
+      {
+        type: 'code',
+        filename: 'DeviceInfoModule.kt',
+        code: `package com.myapp.devinfo
+
+import com.facebook.react.bridge.*
+
+class DeviceInfoModule(reactContext: ReactApplicationContext) :
+    ReactContextBaseJavaModule(reactContext) {
+
+  override fun getName() = "DeviceInfo"
+
+  // exposed to JS as DeviceInfo.getBatteryLevel() -> Promise<number>
+  @ReactMethod
+  fun getBatteryLevel(promise: Promise) {
+    try {
+      val batteryManager = reactApplicationContext
+        .getSystemService(android.content.Context.BATTERY_SERVICE) as android.os.BatteryManager
+      val level = batteryManager.getIntProperty(
+        android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY
+      )
+      promise.resolve(level)
+    } catch (e: Exception) {
+      promise.reject("BATTERY_ERROR", "Could not read battery level", e)
+    }
+  }
+}`,
+      },
+      { type: 'subheading', text: 'iOS — Swift' },
+      {
+        type: 'paragraph',
+        text: 'Swift modules need a small Objective-C bridging file so the legacy bridge (itself written in Objective-C) can see the exported methods.',
+      },
+      {
+        type: 'code',
+        filename: 'DeviceInfoModule.swift',
+        code: `import Foundation
+
+@objc(DeviceInfo)
+class DeviceInfo: NSObject {
+
+  @objc
+  func getBatteryLevel(
+    _ resolve: @escaping RCTPromiseResolveBlock,
+    rejecter reject: @escaping RCTPromiseRejectBlock
+  ) {
+    UIDevice.current.isBatteryMonitoringEnabled = true
+    let level = UIDevice.current.batteryLevel
+    if level < 0 {
+      reject("BATTERY_ERROR", "Battery level unavailable", nil)
+    } else {
+      resolve(Int(level * 100))
+    }
+  }
+}`,
+      },
+      {
+        type: 'code',
+        filename: 'DeviceInfo.m',
+        code: `#import <React/RCTBridgeModule.h>
+
+@interface RCT_EXTERN_MODULE(DeviceInfo, NSObject)
+
+RCT_EXTERN_METHOD(getBatteryLevel:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
+@end`,
+      },
+      { type: 'subheading', text: 'Calling it from JS' },
+      {
+        type: 'code',
+        filename: 'useBatteryLevel.ts',
+        code: `import { NativeModules } from 'react-native';
+
+const { DeviceInfo } = NativeModules;
+
+async function getBatteryLevel(): Promise<number> {
+  return DeviceInfo.getBatteryLevel();
+}`,
+      },
+      {
+        type: 'note',
+        text: "The legacy bridge is untyped from JS's point of view — NativeModules.DeviceInfo is just any at compile time. Nothing stops the Kotlin and Swift implementations from silently drifting apart, or from a method existing on one platform and not the other. That gap is exactly what TurboModules were designed to close.",
+      },
+
+      { type: 'heading', text: 'Writing a TurboModule (New Architecture)' },
+      {
+        type: 'paragraph',
+        text: "A TurboModule starts from a single TypeScript spec file that Codegen reads to generate matching native interfaces for both platforms — Kotlin and Swift implementations then have to satisfy that generated contract, so the three pieces can't silently drift apart the way legacy modules can.",
+      },
+      {
+        type: 'image',
+        src: `${BASE_URL}images/blog/native-modules-anatomy.png`,
+        alt: 'Diagram showing a shared TypeScript spec file at the top, with arrows pointing down to an Android Kotlin implementation and an iOS Swift implementation, both implementing the same generated contract',
+        caption: 'One JS-facing contract, generated once, implemented twice.',
+      },
+      { type: 'subheading', text: '1. Define the spec' },
+      {
+        type: 'code',
+        filename: 'specs/NativeDeviceInfo.ts',
+        code: `import type { TurboModule } from 'react-native';
+import { TurboModuleRegistry } from 'react-native';
+
+export interface Spec extends TurboModule {
+  getBatteryLevel(): Promise<number>;
+  // synchronous — only possible because this is JSI-backed, not bridge-backed
+  getBatteryLevelSync(): number;
+}
+
+export default TurboModuleRegistry.getEnforcing<Spec>('DeviceInfo');`,
+      },
+      { type: 'subheading', text: '2. Implement it on Android' },
+      {
+        type: 'code',
+        filename: 'DeviceInfoModule.kt',
+        code: `package com.myapp.devinfo
+
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.turbomodule.core.interfaces.TurboModule
+
+class DeviceInfoModule(reactContext: ReactApplicationContext) :
+    NativeDeviceInfoSpec(reactContext), TurboModule {
+
+  override fun getName() = NAME
+
+  override fun getBatteryLevel(promise: Promise) {
+    // same implementation as the legacy version above
+  }
+
+  override fun getBatteryLevelSync(): Double {
+    // runs synchronously on the calling JS thread — no Promise needed
+    val batteryManager = reactApplicationContext
+      .getSystemService(android.content.Context.BATTERY_SERVICE) as android.os.BatteryManager
+    return batteryManager.getIntProperty(
+      android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY
+    ).toDouble()
+  }
+
+  companion object {
+    const val NAME = "DeviceInfo"
+  }
+}`,
+      },
+      { type: 'subheading', text: '3. Implement it on iOS' },
+      {
+        type: 'code',
+        filename: 'DeviceInfo.swift',
+        code: `import Foundation
+
+@objc(DeviceInfo)
+class DeviceInfo: NSObject, NativeDeviceInfoSpec {
+
+  func getBatteryLevel(_ resolve: @escaping RCTPromiseResolveBlock,
+                        reject: @escaping RCTPromiseRejectBlock) {
+    // same implementation as the legacy version above
+  }
+
+  // synchronous — returned directly, no resolve/reject pair
+  func getBatteryLevelSync() -> NSNumber {
+    UIDevice.current.isBatteryMonitoringEnabled = true
+    return NSNumber(value: UIDevice.current.batteryLevel * 100)
+  }
+}`,
+      },
+      { type: 'subheading', text: '4. Consume it — synchronously, if you need to' },
+      {
+        type: 'code',
+        filename: 'useBatteryLevel.ts',
+        code: `import DeviceInfo from './specs/NativeDeviceInfo';
+
+// still available, same as the legacy module
+const level = await DeviceInfo.getBatteryLevel();
+
+// only possible on a JSI-backed TurboModule — no await, no bridge round trip
+const levelNow = DeviceInfo.getBatteryLevelSync();`,
+      },
+      {
+        type: 'table',
+        headers: ['', 'Legacy Bridge (NativeModules)', 'TurboModule (JSI)'],
+        rows: [
+          ['Call style', 'Always async (Promise/callback)', 'Async or genuinely synchronous'],
+          ['Type safety JS ↔ native', 'None — NativeModules.X is untyped', 'Enforced by Codegen from one spec'],
+          ['Per-call cost', 'JSON serialization round trip', 'Direct C++ function call'],
+          ['Setup complexity', 'Lower — no Codegen step', 'Higher — spec file, Codegen, New Architecture required'],
+          ['Where it runs', 'React Native (old and new architecture, deprecated path)', 'New Architecture apps only'],
+        ],
+      },
+
+      { type: 'heading', text: 'Sharing Logic in C++ via JSI HostObjects' },
+      {
+        type: 'paragraph',
+        text: "The other reason JSI matters: for genuinely heavy compute, you can write the actual logic once in C++ and expose it directly to JS as a HostObject, with thin Kotlin and Swift wrappers just for platform wiring — instead of writing (and maintaining, and debugging) the same algorithm twice in Kotlin and Swift.",
+      },
+      {
+        type: 'code',
+        filename: 'FastHasher.cpp',
+        code: `#include <jsi/jsi.h>
+
+using namespace facebook::jsi;
+
+class FastHasher : public HostObject {
+public:
+  // exposed to JS as a real, callable function — synchronous, no bridge
+  Value get(Runtime& rt, const PropNameID& name) override {
+    auto propName = name.utf8(rt);
+
+    if (propName == "hash") {
+      return Function::createFromHostFunction(
+        rt,
+        PropNameID::forAscii(rt, "hash"),
+        1, // arg count
+        [](Runtime& rt, const Value&, const Value* args, size_t count) -> Value {
+          std::string input = args[0].asString(rt).utf8(rt);
+
+          // the actual heavy-compute routine — written once, shared
+          // by both platforms, running as real native code
+          uint32_t hash = 2166136261u;
+          for (char c : input) {
+            hash ^= static_cast<uint8_t>(c);
+            hash *= 16777619u;
+          }
+
+          return Value(static_cast<double>(hash));
+        }
+      );
+    }
+    return Value::undefined();
+  }
+};
+
+// registered once per platform in the native init code —
+// after this, JS can call global.__fastHasher.hash("...") directly
+void installFastHasher(Runtime& rt) {
+  rt.global().setProperty(
+    rt, "__fastHasher", Object::createFromHostObject(rt, std::make_shared<FastHasher>())
+  );
+}`,
+      },
+      {
+        type: 'note',
+        text: "This is the same mechanism TurboModules themselves are built on — a HostObject is a C++ object with JS-visible properties and methods. Writing one directly makes sense when the logic is genuinely shared and compute-heavy (codecs, image filters, crypto); for a typical thin wrapper around a platform SDK, a regular TurboModule with separate Kotlin/Swift implementations is simpler and easier to maintain.",
+      },
+
+      { type: 'heading', text: 'Common Pitfalls' },
+      { type: 'subheading', text: 'Threading' },
+      {
+        type: 'paragraph',
+        text: "Legacy native module methods run on a background thread by default, not the main/UI thread. Touch any UI API — Android's View system, iOS's UIKit — from inside a @ReactMethod without explicitly dispatching to the main thread, and it either silently misbehaves or crashes.",
+      },
+      {
+        type: 'code',
+        filename: 'MainThreadDispatch.swift',
+        code: `@objc
+func showToast(_ message: String) {
+  // WRONG — this method body runs on a background thread
+  // UIView APIs here will crash or silently no-op
+
+  DispatchQueue.main.async {
+    // correct — explicitly hop to the main thread first
+  }
+}`,
+      },
+      { type: 'subheading', text: 'Memory leaks from event emitters' },
+      {
+        type: 'paragraph',
+        text: "A native module that emits events to JS (RCTEventEmitter / DeviceEventEmitter) needs a matching removeListeners implementation, and JS-side code needs to actually call it on cleanup. Skipping this is one of the most common native-module memory leaks — the emitter keeps a strong reference to a JS callback that never gets released.",
+      },
+      { type: 'subheading', text: 'Spec drift (legacy modules)' },
+      {
+        type: 'paragraph',
+        text: "Since legacy NativeModules aren't type-checked against a shared contract, it's entirely possible to ship a method that exists on Android but was never added on iOS — and not find out until a user on the other platform hits a runtime 'method does not exist' error. TurboModules' Codegen step exists specifically to make this class of bug impossible.",
+      },
+      { type: 'subheading', text: 'Testing on the simulator only' },
+      {
+        type: 'paragraph',
+        text: "Battery APIs, camera behavior, background execution limits, and real memory pressure all behave differently — sometimes completely differently — on a simulator/emulator versus a real device. Native module bugs that never show up in months of simulator testing can appear on day one of TestFlight/Play internal testing on real hardware.",
+      },
+
+      { type: 'heading', text: 'Legacy Bridge or TurboModule?' },
+      {
+        type: 'list',
+        items: [
+          "Project is already on the New Architecture: write TurboModules — there's no reason to add new legacy modules to a codebase that already supports the newer, safer path.",
+          "Perf-critical or needs a synchronous call: TurboModule/JSI is the only option that can actually deliver that — the legacy bridge cannot be made synchronous, full stop.",
+          "Maintaining or extending an existing legacy-bridge codebase not yet migrated: legacy modules remain the pragmatic choice until the app itself moves to the New Architecture.",
+          "A quick wrapper around a small platform API with no perf concerns: either works — pick whichever matches the rest of the codebase's architecture.",
+        ],
+      },
+      {
+        type: 'paragraph',
+        text: "Whichever generation you're writing against, the actual native code — the Kotlin, the Swift, the C++ — is where the real engineering happens. The bridge or JSI is just how it gets introduced to JS; getting the platform code itself right, and testing it on real hardware, is still most of the job.",
       },
     ],
     prevSlug: 'optimizing-flatlist',
