@@ -1,8 +1,74 @@
+import { Highlight, themes } from 'prism-react-renderer'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { Icon } from '../../components/ui/Icon'
 import { ImagePlaceholder } from '../../components/ui/ImagePlaceholder'
 import { SITE } from '../../config/site'
 import { getPostBySlug } from './posts'
+
+const EXTENSION_LANGUAGES = {
+  tsx: 'tsx',
+  ts: 'typescript',
+  jsx: 'jsx',
+  js: 'javascript',
+  mjs: 'javascript',
+  kt: 'kotlin',
+  kts: 'kotlin',
+  swift: 'swift',
+  xml: 'markup',
+  plist: 'markup',
+  yml: 'yaml',
+  yaml: 'yaml',
+  json: 'json',
+  py: 'python',
+  sql: 'sql',
+  go: 'go',
+  md: 'markdown',
+}
+
+function detectLanguage(filename = '') {
+  const extension = filename.trim().split(/[\s(/]/).pop()?.split('.').pop()?.toLowerCase()
+  return EXTENSION_LANGUAGES[extension] || 'plain'
+}
+
+function CodeWindow({ filename, code, lang }) {
+  const language = lang || detectLanguage(filename)
+  const lines = code.trim().split('\n')
+
+  return (
+    <div className="my-12 overflow-hidden rounded-xl border border-black/40 shadow-ambient">
+      <div className="flex items-center gap-3 bg-[#323233] px-4 py-3">
+        <div className="flex gap-1.5">
+          <span className="h-3 w-3 rounded-full bg-[#ff5f56]" />
+          <span className="h-3 w-3 rounded-full bg-[#ffbd2e]" />
+          <span className="h-3 w-3 rounded-full bg-[#27c93f]" />
+        </div>
+        {filename ? (
+          <span className="text-mono-sm font-mono-sm text-white/60">{filename}</span>
+        ) : null}
+      </div>
+      <Highlight theme={themes.vsDark} code={lines.join('\n')} language={language}>
+        {({ tokens, getLineProps, getTokenProps }) => (
+          <div className="flex bg-[#1e1e1e]">
+            <div className="select-none border-r border-white/10 py-4 pl-4 pr-3 text-right text-mono-sm font-mono-sm leading-relaxed text-white/25">
+              {tokens.map((_, i) => (
+                <div key={i}>{i + 1}</div>
+              ))}
+            </div>
+            <pre className="min-w-0 flex-1 overflow-x-auto py-4 pl-4 pr-6 text-mono-sm font-mono-sm leading-relaxed">
+              {tokens.map((line, i) => (
+                <div key={i} {...getLineProps({ line })}>
+                  {line.length === 0
+                    ? ' '
+                    : line.map((token, key) => <span key={key} {...getTokenProps({ token })} />)}
+                </div>
+              ))}
+            </pre>
+          </div>
+        )}
+      </Highlight>
+    </div>
+  )
+}
 
 function BodyBlock({ block }) {
   if (block.type === 'heading') {
@@ -12,16 +78,7 @@ function BodyBlock({ block }) {
     return <h3 className="mb-3 mt-8 text-body-lg font-headline-md font-bold text-on-background">{block.text}</h3>
   }
   if (block.type === 'code') {
-    return (
-      <div className="my-12 overflow-hidden rounded-xl border border-outline-variant/20 bg-surface-container-low shadow-ambient">
-        <div className="flex items-center border-b border-outline-variant/20 bg-surface-container-lowest px-4 py-3">
-          <span className="text-mono-sm font-mono-sm text-secondary">{block.filename}</span>
-        </div>
-        <pre className="overflow-x-auto p-6">
-          <code className="text-mono-sm font-mono-sm leading-relaxed text-on-surface-variant">{block.code}</code>
-        </pre>
-      </div>
-    )
+    return <CodeWindow filename={block.filename} code={block.code} lang={block.lang} />
   }
   if (block.type === 'list') {
     const ListTag = block.ordered ? 'ol' : 'ul'

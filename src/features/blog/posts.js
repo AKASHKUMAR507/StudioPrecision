@@ -671,6 +671,7 @@ async function authenticateUser() {
       {
         type: 'code',
         filename: 'MASVS self-audit (abbreviated)',
+        lang: 'markdown',
         code: `### MASVS-STORAGE
 - [ ] No sensitive data in AsyncStorage/SharedPreferences unencrypted
 - [ ] Auth tokens in Keychain/Keystore with appropriate accessibility flags
@@ -1021,6 +1022,7 @@ async function copyOTPWithAutoClear(otp) {
       {
         type: 'code',
         filename: 'what not to do',
+        lang: 'javascript',
         code: `// BAD — committed to git, permanently in history
 const STRIPE_KEY = "sk_live_abc123xyz";
 
