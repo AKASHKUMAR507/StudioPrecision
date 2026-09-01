@@ -52,12 +52,26 @@ export const PROJECTS = [
     summary:
       'A micro-lending loan management app enabling loans up to ₹3L for small business owners and women entrepreneurs, built around a three-role field approval workflow.',
     tags: ['React Native', 'OCR', 'Geolocation'],
+    thumbnail: `${BASE_URL}images/work/seeds/thumbnail.jpg`,
     hero: {
       badge: 'FINTECH APP',
       description:
         'End-to-end development of a micro-financing platform used across a multi-role approval workflow — from field data capture to final credit validation.',
       liveUrl: null,
+      image: `${BASE_URL}images/work/seeds/screen-customer-account.jpg`,
     },
+    screenshots: [
+      { src: `${BASE_URL}images/work/seeds/screen-customer-account.jpg`, alt: 'Seeds Finance app Home screen showing approved credit limit and account overview' },
+      { src: `${BASE_URL}images/work/seeds/screen-customer-profile.jpg`, alt: 'Seeds Finance app Profile & Settings screen showing suppliers, transactions, and support' },
+      { src: `${BASE_URL}images/work/seeds/screen-customer-transactions.jpg`, alt: 'Seeds Finance app My Transactions screen showing tranche payment history and status' },
+      { src: `${BASE_URL}images/work/seeds/screen-customer-tranche-request.jpg`, alt: 'Seeds Finance app New Tranche Request screen for selecting a supplier' },
+      { src: `${BASE_URL}images/work/seeds/screen-officer-home.jpg`, alt: 'Seeds Officer app Home dashboard showing leads and application counts' },
+      { src: `${BASE_URL}images/work/seeds/screen-officer-applications.jpg`, alt: 'Seeds Officer app Applications screen showing pending, completed, and rejected applications' },
+      { src: `${BASE_URL}images/work/seeds/screen-officer-application.jpg`, alt: 'Seeds Officer app Application Details screen showing loan application upload progress' },
+      { src: `${BASE_URL}images/work/seeds/screen-officer-tranche-details.jpg`, alt: 'Seeds Officer app Tranche Details screen showing payment history and status' },
+      { src: `${BASE_URL}images/work/seeds/screen-officer-map.jpg`, alt: 'Seeds Officer app Supplier Location screen showing a pinned map location' },
+      { src: `${BASE_URL}images/work/seeds/screen-officer-login.jpg`, alt: 'Seeds Officer app employee login screen' },
+    ],
     challenge: {
       title: 'Manual, Fragmented Loan Approvals',
       description:
@@ -66,18 +80,39 @@ export const PROJECTS = [
     solution: {
       title: 'Multi-Role Approval Workflow',
       description:
-        'Built a three-role workflow — Regional Officer (Aadhaar/PAN OCR, Equifax CIBIL scoring initiation), Branch Manager (geolocation verification within 100m, voice interviews), and Branch Credit Manager (final validation) — on a reusable custom form-validation framework, with PennyDrop bank verification and Firebase/Sentry.io for distribution and monitoring.',
+        'Built a three-role workflow — Regional Officer (Aadhaar/PAN OCR, Equifax CIBIL scoring initiation), Branch Manager (geolocation verification within 100m, voice interviews), and Branch Credit Manager (final validation) — on a reusable custom form-validation framework, with PhonePe and Penny Drop for bank verification, Digio for KYC/CKYC/VKYC and document eSign, and Firebase/Sentry.io for distribution and monitoring.',
+    },
+    companionApp: {
+      title: 'Seeds Officer',
+      description:
+        'A field app built for the loan officers running the approval workflow — managing leads, applications, tranches, and supplier visits from a single dashboard while working on the move.',
+      liveUrl: null,
+      features: [
+        { name: 'Leads', description: 'See all leads, follow-ups, and interested prospects on one dashboard.' },
+        { name: 'Application Details', description: 'Log a response and notes right after every customer call.' },
+        { name: 'Applications', description: 'Filter applications by pending, completed, or rejected — all in one list.' },
+        { name: 'Tranche Payments', description: 'Review every credit, status, and transaction ID instantly.' },
+        { name: 'Supplier Location', description: 'Pin and save exact supplier locations for every field visit.' },
+      ],
     },
     stack: [
       { name: 'React Native', role: 'Frontend Framework' },
       { name: 'Equifax CIBIL API', role: 'Credit Scoring' },
       { name: 'Google Maps API', role: 'Geolocation Verification' },
-      { name: 'Firebase & Sentry.io', role: 'Distribution & Monitoring' },
+      { name: 'PhonePe', role: 'Payments' },
+      { name: 'Penny Drop', role: 'Bank Account Verification' },
+      { name: 'Digio', role: 'KYC, CKYC, VKYC & Document eSign' },
+      { name: 'Camera', role: 'Document & Field Capture' },
+      { name: 'Firebase Analytics', role: 'Usage Analytics' },
+      { name: 'Firebase Crashlytics', role: 'Crash Reporting' },
+      { name: 'Firebase Cloud Messaging', role: 'Push Notifications' },
+      { name: 'Firebase Remote Config', role: 'Feature Flags & Config' },
+      { name: 'Sentry.io', role: 'Error Monitoring' },
     ],
     metrics: [
       { value: '₹3L', label: 'Max Loan Amount' },
       { value: '3', label: 'Approval Roles' },
-      { value: '4+', label: 'APIs Integrated' },
+      { value: '10+', label: 'APIs Integrated' },
     ],
     next: 'psolvi',
   },
