@@ -201,6 +201,66 @@ export const PROJECTS = [
       { name: 'Camera', role: 'In-App Media Capture' },
     ],
     metrics: [],
+    next: 'ifhl',
+  },
+  {
+    slug: 'ifhl',
+    tag: 'Fintech',
+    title: 'IFHL',
+    summary:
+      'A one-stop financial platform — instant personal loans, stock trading, mutual funds, digital gold, fixed deposits, and insurance, unified behind a single paperless KYC flow.',
+    tags: ['React Native', 'Lending', 'Investments'],
+    thumbnail: `${BASE_URL}images/work/ifhl/thumbnail.jpg`,
+    hero: {
+      badge: 'FINTECH APP',
+      description:
+        'India Finance House (IFHL) — a fully digital lending and investment app offering instant consumer loans alongside stock trading, mutual funds, digital gold, fixed deposits, and insurance.',
+      liveUrl: 'https://play.google.com/store/apps/details?id=com.ifhl&pcampaignid=web_share',
+      image: `${BASE_URL}images/work/ifhl/hero.jpg`,
+    },
+    screenshots: [
+      { src: `${BASE_URL}images/work/ifhl/hero.jpg`, alt: 'IFHL app Loans screen showing an active personal loan and JCB loan with balance and EMI details' },
+      { src: `${BASE_URL}images/work/ifhl/screen-wealth.jpg`, alt: 'IFHL app Wealth screen showing stock market and mutual fund investment options' },
+    ],
+    challenge: {
+      title: 'Credit, Investing, and Trading — Scattered Across Apps',
+      description:
+        'Consumers looking for quick credit or to grow their savings had to juggle separate apps for loans, stock trading, mutual funds, gold, fixed deposits, and insurance — with paperwork-heavy KYC slowing every one of them down.',
+    },
+    solution: {
+      title: 'One App for Loans, Investing, and Trading',
+      description:
+        'Built a fully digital, paperless lending and investment platform — instant personal loans from ₹5,000 to ₹2,00,000 with same-day disbursal, alongside NSE/BSE stock trading, mutual funds, digital gold, fixed deposits, and insurance, all behind a single Aadhaar/PAN-based KYC flow.',
+    },
+    modules: [
+      {
+        name: 'Instant Personal Loans',
+        description:
+          'Fully digital, paperless loan applications from ₹5,000 to ₹2,00,000, with approval and disbursal into the borrower\'s bank account within 24 hours, and flexible repayment tenures from 3 to 24 months.',
+      },
+      {
+        name: 'Wealth Management',
+        description:
+          'Digital gold starting at ₹10, fixed deposits with returns up to 9%, and insurance plans for health, vehicles, and valuables, sourced through partner financial institutions.',
+      },
+      {
+        name: 'Stock Trading & Demat',
+        description:
+          'Free demat account opening and real-time NSE and BSE stock trading, plus mutual fund investing, at competitive brokerage rates.',
+      },
+      {
+        name: 'KYC & Onboarding',
+        description:
+          'Aadhaar, PAN, and bank-statement verification for instant approval, keeping the entire loan and investment onboarding flow paperless.',
+      },
+    ],
+    stack: [
+      { name: 'React Native', role: 'Frontend Framework' },
+      { name: 'Aadhaar & PAN KYC', role: 'Digital Onboarding' },
+      { name: 'NSE & BSE Integration', role: 'Stock Trading & Demat' },
+      { name: 'Mutual Funds & Digital Gold APIs', role: 'Investment Products' },
+    ],
+    metrics: [],
     next: 'mobiloitte-projects',
   },
   {
