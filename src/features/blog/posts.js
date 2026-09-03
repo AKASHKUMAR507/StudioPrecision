@@ -1,4 +1,44 @@
+import reactInterviewPrep from './data/react-interview-prep.json'
+
 const BASE_URL = import.meta.env.BASE_URL
+
+// Turns a { days: [{ day, title, questions: [{ question, body }] }] } series
+// (kept in its own JSON file so future days can be appended without touching
+// this file) into a single blog post with a heading per day and a
+// subheading per question.
+function buildDayByDayPost(series) {
+  const body = series.days.flatMap((day) => [
+    { type: 'heading', text: `Day ${day.day} — ${day.title}` },
+    ...day.questions.flatMap((q, i) => [
+      { type: 'subheading', text: `${i + 1}. ${q.question}` },
+      ...q.body,
+    ]),
+  ])
+
+  const wordCount = body.reduce((count, block) => {
+    if (block.type === 'paragraph' || block.type === 'note') {
+      return count + block.text.trim().split(/\s+/).length
+    }
+    if (block.type === 'list') {
+      return count + block.items.join(' ').trim().split(/\s+/).length
+    }
+    return count
+  }, 0)
+  const readMinutes = Math.max(1, Math.round(wordCount / 200))
+
+  return {
+    slug: series.slug,
+    title: series.title,
+    date: series.date,
+    dateLabel: series.dateLabel,
+    readTime: `${readMinutes} min read`,
+    tags: series.tags,
+    excerpt: series.excerpt,
+    body,
+    prevSlug: 'mobile-security-fintech-healthtech',
+    nextSlug: null,
+  }
+}
 
 export const POSTS = [
   {
@@ -2076,8 +2116,9 @@ docker run -it -p 8000:8000 opensecurity/mobile-security-framework-mobsf
       },
     ],
     prevSlug: 'native-modules',
-    nextSlug: null,
+    nextSlug: 'react-interview-prep-day-by-day',
   },
+  buildDayByDayPost(reactInterviewPrep),
 ]
 
 export function getPostBySlug(slug) {
