@@ -308,7 +308,7 @@ function BlogPostContent({ post }) {
   }, [toc])
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-canvas-margin-mobile py-16 md:px-canvas-margin md:py-24 lg:pr-80 xl:pr-96 2xl:pr-64">
+    <div className="mx-auto w-full max-w-4xl px-canvas-margin-mobile py-16 md:max-w-5xl md:px-canvas-margin md:py-24 lg:max-w-[min(60rem,calc(100vw-37rem))] lg:px-0 xl:max-w-[min(66rem,calc(100vw-43rem))]">
       <Link
         to="/blog"
         className="group mb-stack-lg inline-flex items-center gap-2 font-headline-md text-headline-md font-bold text-on-surface"
