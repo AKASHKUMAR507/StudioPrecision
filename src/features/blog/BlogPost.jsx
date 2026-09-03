@@ -1,5 +1,5 @@
 import { Highlight, themes } from 'prism-react-renderer'
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { Icon } from '../../components/ui/Icon'
 import { ImagePlaceholder } from '../../components/ui/ImagePlaceholder'
@@ -34,6 +34,48 @@ const EXTENSION_LANGUAGES = {
 function detectLanguage(filename = '') {
   const extension = filename.trim().split(/[\s(/]/).pop()?.split('.').pop()?.toLowerCase()
   return EXTENSION_LANGUAGES[extension] || 'plain'
+}
+
+function slugify(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .trim()
+    .replace(/[\s_]+/g, '-')
+}
+
+// Builds a nested table of contents (heading > subheading) from a post's
+// body blocks, and returns a matching per-block id list so headings and
+// TOC links can be wired to the same anchors.
+function buildToc(body) {
+  const usedSlugs = new Map()
+  const ids = []
+  const toc = []
+  let currentSection = null
+
+  body.forEach((block, index) => {
+    if (block.type !== 'heading' && block.type !== 'subheading') {
+      ids.push(null)
+      return
+    }
+
+    const base = slugify(block.text) || `section-${index}`
+    const seen = usedSlugs.get(base) || 0
+    usedSlugs.set(base, seen + 1)
+    const id = seen === 0 ? base : `${base}-${seen}`
+    ids.push(id)
+
+    if (block.type === 'heading') {
+      currentSection = { id, text: block.text, children: [] }
+      toc.push(currentSection)
+    } else if (currentSection) {
+      currentSection.children.push({ id, text: block.text })
+    } else {
+      toc.push({ id, text: block.text, children: [] })
+    }
+  })
+
+  return { toc, ids }
 }
 
 function CodeWindow({ filename, code, lang }) {
@@ -95,12 +137,20 @@ function CodeWindow({ filename, code, lang }) {
   )
 }
 
-function BodyBlock({ block }) {
+function BodyBlock({ block, id }) {
   if (block.type === 'heading') {
-    return <h2 className="mb-6 mt-12 text-headline-md font-headline-md text-on-background">{block.text}</h2>
+    return (
+      <h2 id={id} className="mb-6 mt-12 scroll-mt-28 text-headline-md font-headline-md text-on-background">
+        {block.text}
+      </h2>
+    )
   }
   if (block.type === 'subheading') {
-    return <h3 className="mb-3 mt-8 text-body-lg font-headline-md font-bold text-on-background">{block.text}</h3>
+    return (
+      <h3 id={id} className="mb-3 mt-8 scroll-mt-28 text-body-lg font-headline-md font-bold text-on-background">
+        {block.text}
+      </h3>
+    )
   }
   if (block.type === 'code') {
     return <CodeWindow filename={block.filename} code={block.code} lang={block.lang} />
@@ -169,14 +219,96 @@ function BodyBlock({ block }) {
   return <p className="text-body-md font-body-md leading-relaxed text-on-background/80">{block.text}</p>
 }
 
+// Flattens the nested (heading > subheading) toc into a single list carrying
+// each item's nesting depth, since the Notion-style minimap renders every
+// entry as one dash in document order rather than an indented tree.
+function flattenToc(toc) {
+  return toc.flatMap((item) => [
+    { id: item.id, text: item.text, level: 0 },
+    ...item.children.map((child) => ({ id: child.id, text: child.text, level: 1 })),
+  ])
+}
+
+// A Notion-style document outline: collapsed to short dashes (one per
+// heading, day headings a touch longer than questions) so it reads as a
+// minimap of the page; hovering the rail expands every dash into its full
+// heading text without shifting the page layout.
+function TableOfContents({ toc, activeId }) {
+  const items = useMemo(() => flattenToc(toc), [toc])
+
+  return (
+    <nav
+      aria-label="Table of contents"
+      className="group/toc fixed right-6 top-1/2 hidden max-h-[70vh] w-64 -translate-y-1/2 overflow-y-auto overflow-x-hidden py-2 lg:block xl:right-10 xl:w-72"
+    >
+      <ul className="flex flex-col gap-2.5">
+        {items.map((item) => {
+          const isActive = activeId === item.id
+          return (
+            <li key={item.id}>
+              <a href={`#${item.id}`} title={item.text} className="flex items-center justify-end gap-3 py-px">
+                <span
+                  className={`max-w-0 truncate text-right text-mono-sm font-mono-sm opacity-0 transition-[max-width,opacity] duration-200 group-hover/toc:max-w-[230px] group-hover/toc:opacity-100 ${
+                    isActive ? 'text-tertiary' : 'text-secondary'
+                  }`}
+                >
+                  {item.text}
+                </span>
+                <span
+                  className={`shrink-0 rounded-full transition-all duration-200 ${
+                    isActive
+                      ? `bg-tertiary ${item.level === 0 ? 'h-[3px] w-8' : 'h-[3px] w-5'}`
+                      : `bg-outline-variant ${item.level === 0 ? 'h-[2px] w-7' : 'h-[2px] w-4'}`
+                  }`}
+                />
+              </a>
+            </li>
+          )
+        })}
+      </ul>
+    </nav>
+  )
+}
+
 export function BlogPost() {
   const { slug } = useParams()
   const post = getPostBySlug(slug)
 
   if (!post) return <Navigate to="/blog" replace />
 
+  // Keyed by slug so navigating between posts (prev/next) remounts this and
+  // resets the table-of-contents scroll-spy state instead of carrying the
+  // previous post's active heading over.
+  return <BlogPostContent key={slug} post={post} />
+}
+
+function BlogPostContent({ post }) {
+  const articleRef = useRef(null)
+  const [activeId, setActiveId] = useState(null)
+
+  const { toc, ids } = useMemo(() => buildToc(post.body), [post])
+
+  useEffect(() => {
+    const container = articleRef.current
+    if (!container || toc.length === 0) return
+
+    const headingEls = container.querySelectorAll('h2[id], h3[id]')
+    if (headingEls.length === 0) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) setActiveId(entry.target.id)
+        })
+      },
+      { rootMargin: '-112px 0px -70% 0px', threshold: 0 },
+    )
+    headingEls.forEach((el) => observer.observe(el))
+    return () => observer.disconnect()
+  }, [toc])
+
   return (
-    <div className="mx-auto w-full max-w-4xl px-canvas-margin-mobile py-16 md:px-canvas-margin md:py-24">
+    <div className="mx-auto w-full max-w-7xl px-canvas-margin-mobile py-16 md:px-canvas-margin md:py-24 lg:pr-80 xl:pr-96 2xl:pr-64">
       <Link
         to="/blog"
         className="group mb-stack-lg inline-flex items-center gap-2 font-headline-md text-headline-md font-bold text-on-surface"
@@ -185,7 +317,7 @@ export function BlogPost() {
         Blog
       </Link>
 
-      <article className="mb-section-gap">
+      <article ref={articleRef} className="mb-section-gap">
         <header className="mb-12">
           <div className="mb-6">
             <span className="inline-flex items-center rounded border border-outline-variant/20 bg-surface-container-low px-3 py-1 text-mono-sm font-mono-sm text-on-surface-variant">
@@ -204,7 +336,7 @@ export function BlogPost() {
 
         <div className="space-y-8">
           {post.body.map((block, index) => (
-            <BodyBlock key={index} block={block} />
+            <BodyBlock key={index} block={block} id={ids[index]} />
           ))}
         </div>
 
@@ -228,17 +360,11 @@ export function BlogPost() {
       </article>
 
       <nav className="grid grid-cols-1 gap-8 border-t border-outline-variant/20 pt-12 md:grid-cols-2">
-        {post.prevSlug ? (
-          <PostLink slug={post.prevSlug} label="Previous Article" />
-        ) : (
-          <span />
-        )}
-        {post.nextSlug ? (
-          <PostLink slug={post.nextSlug} label="Next Article" align="right" />
-        ) : (
-          <span />
-        )}
+        {post.prevSlug ? <PostLink slug={post.prevSlug} label="Previous Article" /> : <span />}
+        {post.nextSlug ? <PostLink slug={post.nextSlug} label="Next Article" align="right" /> : <span />}
       </nav>
+
+      {toc.length > 0 ? <TableOfContents toc={toc} activeId={activeId} /> : null}
     </div>
   )
 }
