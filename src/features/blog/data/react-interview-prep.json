@@ -3,7 +3,11 @@
   "title": "React Interview Prep — Day by Day",
   "date": "2026-09-03",
   "dateLabel": "September 3, 2026",
-  "tags": ["React", "Interview Prep", "JavaScript"],
+  "tags": [
+    "React",
+    "Interview Prep",
+    "JavaScript"
+  ],
   "excerpt": "A running, day-by-day set of React interview questions and answers — from JSX and components through state, props, and beyond — each with a full breakdown plus a tight, interview-ready answer to fall back on.",
   "days": [
     {
@@ -268,13 +272,37 @@
           "body": [
             {
               "type": "table",
-              "headers": ["", "State", "Props"],
+              "headers": [
+                "",
+                "State",
+                "Props"
+              ],
               "rows": [
-                ["Owned by", "the component itself", "the parent, passed down"],
-                ["Mutability", "mutable (via setter)", "read-only (immutable from child's view)"],
-                ["Purpose", "internal data that changes over time", "configuration/data passed into a component"],
-                ["Who can change it", "only the component itself", "only the parent that owns it"],
-                ["Triggers re-render on change", "yes", "yes (when the parent's data changes, causing new props)"]
+                [
+                  "Owned by",
+                  "the component itself",
+                  "the parent, passed down"
+                ],
+                [
+                  "Mutability",
+                  "mutable (via setter)",
+                  "read-only (immutable from child's view)"
+                ],
+                [
+                  "Purpose",
+                  "internal data that changes over time",
+                  "configuration/data passed into a component"
+                ],
+                [
+                  "Who can change it",
+                  "only the component itself",
+                  "only the parent that owns it"
+                ],
+                [
+                  "Triggers re-render on change",
+                  "yes",
+                  "yes (when the parent's data changes, causing new props)"
+                ]
               ]
             },
             {
@@ -290,6 +318,363 @@
               "type": "note",
               "label": "Interview-ready answer",
               "text": "State is data a component manages internally and can change itself via a setter — think of it as private memory. Props are data passed in from a parent, and are read-only from the receiving component's perspective — think of them like function arguments. Both trigger re-renders when they change, but a component only controls its own state; it never controls the props it receives, since those belong to whoever passed them down."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "title": "Beginner: Data Flow & Rendering",
+      "questions": [
+        {
+          "question": "How do you pass data between components?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "There are four directions data can move between components in React, each with its own mechanism. Here's the full picture at a glance before working through each one:"
+            },
+            {
+              "type": "code",
+              "filename": "data-flow-directions.md",
+              "code": "Parent -> Child (props)              Child -> Parent (callback)\n+----------+   name=\"Hi\"    +---------+   onSend(\"Hi!\")   back up\n|  Parent  | -------------> |  Child  | ------------------> to Parent\n+----------+                +---------+   (calls the fn it was given)\n\nSibling <-> Sibling                    Distant / deeply nested\n                                        +---------------------------+\n+-----------+   +-----------+           | <ThemeContext.Provider>   |\n| Sibling A |   | Sibling B |           |     ...                   |\n+-----+-----+   +-----^-----+           |       ...                 |\n      |  state lives in the             |         DeeplyNested      |\n      +--> shared PARENT ---------------->  reads it directly,      |\n           (\"lifting state up\")         |  no props threaded down   |\n                                        +---------------------------+\n",
+              "lang": "markdown"
+            },
+            {
+              "type": "paragraph",
+              "text": "Parent → Child (props — the simplest, most common case):"
+            },
+            {
+              "type": "code",
+              "filename": "ParentToChild.jsx",
+              "code": "function Parent() {\n  return <Child message=\"Hello from parent\" />;\n}\nfunction Child({ message }) {\n  return <p>{message}</p>;\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "Child → Parent (via a callback function passed as a prop):"
+            },
+            {
+              "type": "code",
+              "filename": "ChildToParent.jsx",
+              "code": "function Parent() {\n  const [message, setMessage] = useState(\"\");\n  return <Child onSend={(msg) => setMessage(msg)} />;\n}\nfunction Child({ onSend }) {\n  return <button onClick={() => onSend(\"Hi from child!\")}>Send</button>;\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "There's no built-in way for a child to directly modify a parent's state — the parent has to explicitly hand down a function the child can call, which then updates the parent's own state."
+            },
+            {
+              "type": "paragraph",
+              "text": "Sibling ↔ Sibling (no direct path — must go through a shared parent, aka “lifting state up”):"
+            },
+            {
+              "type": "code",
+              "filename": "SiblingViaParent.jsx",
+              "code": "function Parent() {\n  const [shared, setShared] = useState(\"\");\n  return (\n    <>\n      <SiblingA onUpdate={setShared} />\n      <SiblingB data={shared} />\n    </>\n  );\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "Distant/deeply nested components (Context API):"
+            },
+            {
+              "type": "code",
+              "filename": "ContextPreview.jsx",
+              "code": "const ThemeContext = createContext();\n\nfunction App() {\n  return (\n    <ThemeContext.Provider value=\"dark\">\n      <DeeplyNestedComponent />  {/* can read \"dark\" without props passed through every level */}\n    </ThemeContext.Provider>\n  );\n}"
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "Data flows down via props from parent to child. To send data back up, the parent passes a callback function as a prop, which the child calls to communicate an event or value. There's no direct sibling-to-sibling communication — it has to go through a shared parent, which is the basis of 'lifting state up.' For data needed across many nested levels without manually threading it through every component, Context API avoids the prop-drilling problem."
+            }
+          ]
+        },
+        {
+          "question": "What is the purpose of render() in React?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "render() is a required method on class components that returns the JSX describing what the UI should look like for the current state/props. It's the class-component equivalent of what a functional component's function body does — every time state or props change, React calls render() again to figure out the updated UI."
+            },
+            {
+              "type": "code",
+              "filename": "Greeting.jsx",
+              "code": "class Greeting extends React.Component {\n  render() {\n    return <h1>Hello, {this.props.name}!</h1>;\n  }\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "Key rules about render():"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Must be pure — given the same this.props and this.state, it should always return the same JSX. It should not modify state (calling setState inside render() causes an infinite loop), interact with the DOM directly, or trigger side effects like API calls.",
+                "Called automatically by React whenever state or props change — you never call it manually.",
+                "Can return null to render nothing."
+              ]
+            },
+            {
+              "type": "code",
+              "filename": "Toggle.jsx",
+              "code": "class Toggle extends React.Component {\n  render() {\n    if (!this.props.visible) return null;  // renders nothing\n    return <div>I'm visible!</div>;\n  }\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "The functional component equivalent: functional components don't have a render() method — the function body itself is the render logic; whatever JSX you return from the function serves the exact same purpose."
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "render() is the required method on a class component that returns the JSX for the current state and props — React calls it automatically whenever either changes, to determine what the UI should look like. It must be a pure function with no side effects or state mutations inside it. In functional components, there's no separate render() method — the function body itself plays that role, since whatever JSX it returns is what gets rendered."
+            }
+          ]
+        },
+        {
+          "question": "How do you use conditional rendering in React?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "Since JSX is just JavaScript, you can use normal JS control flow to decide what to render."
+            },
+            {
+              "type": "code",
+              "filename": "conditional-rendering.jsx",
+              "code": "// 1. if/else — outside the JSX, before the return\nfunction Greeting({ isLoggedIn }) {\n  if (isLoggedIn) {\n    return <h1>Welcome back!</h1>;\n  }\n  return <h1>Please log in.</h1>;\n}\n\n// 2. Ternary — inline within JSX, good for simple either/or\nfunction Greeting({ isLoggedIn }) {\n  return <h1>{isLoggedIn ? \"Welcome back!\" : \"Please log in.\"}</h1>;\n}\n\n// 3. Logical && — render something OR nothing (no else case)\nfunction Notification({ hasMessages }) {\n  return (\n    <div>\n      {hasMessages && <span>You have new messages!</span>}\n    </div>\n  );\n}\n\n// 4. Switch statement — for many possible conditions\nfunction StatusMessage({ status }) {\n  switch (status) {\n    case \"loading\": return <p>Loading...</p>;\n    case \"error\": return <p>Something went wrong.</p>;\n    case \"success\": return <p>Done!</p>;\n    default: return null;\n  }\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "The gotcha interviewers love with &&: if the left-hand value is 0 (a “falsy” number, not false), React will actually render the literal 0 on screen instead of nothing:"
+            },
+            {
+              "type": "code",
+              "filename": "and-gotcha.jsx",
+              "code": "{count && <span>You have {count} items</span>}\n// if count is 0 -> renders the number \"0\" on screen, not nothing! (0 is falsy but not `false`)\n\n// Fix — force a real boolean\n{count > 0 && <span>You have {count} items</span>}"
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "Since JSX is just JavaScript, conditional rendering uses normal JS constructs — if/else before the return for branching logic, ternaries inline within JSX for simple either/or cases, and && for an all-or-nothing render. The classic gotcha with && is that a falsy-but-non-boolean left side, like 0, gets rendered literally instead of being treated as 'nothing' — so I make sure the left side of && is an actual boolean."
+            }
+          ]
+        },
+        {
+          "question": "What are keys in React lists, and why are they important?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "When rendering a list of elements, React needs a stable, unique identifier per item to efficiently figure out which items changed, were added, or were removed between renders — that's what the key prop is for."
+            },
+            {
+              "type": "code",
+              "filename": "UserList.jsx",
+              "code": "const users = [\n  { id: 1, name: \"Priya\" },\n  { id: 2, name: \"Rahul\" },\n  { id: 3, name: \"Amit\" }\n];\n\nfunction UserList() {\n  return (\n    <ul>\n      {users.map(user => (\n        <li key={user.id}>{user.name}</li>  // key should be unique & stable\n      ))}\n    </ul>\n  );\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "Why this matters — how React's reconciliation actually uses keys: React compares the previous render's list against the new one using keys to match up which DOM elements correspond to which data items. Without a stable key, React can't tell “this is the same item, just moved” from “this is a brand new item” — leading it to unnecessarily re-render, lose internal component state (like a text input's typed value), or even show the wrong item's state at a given position."
+            },
+            {
+              "type": "code",
+              "filename": "keys-reconciliation.md",
+              "code": "Before render          After reorder (B moved to front)\nkey=A  Priya           key=B  Rahul      <- React matches by KEY,\nkey=B  Rahul           key=A  Priya         not by position\nkey=C  Amit            key=C  Amit\n\nWith stable keys:   React sees \"A, B, C just moved\" -> reuses the\n                    same DOM nodes & component state, just reorders them.\n\nWith index as key:  position 0 was \"A\", is now \"B\" -> React thinks\n                    the ITEM at position 0 changed -> may re-render it\n                    and drag along any local state (e.g. a typed input)\n                    from the wrong row.\n",
+              "lang": "markdown"
+            },
+            {
+              "type": "paragraph",
+              "text": "The classic mistake — using array index as key:"
+            },
+            {
+              "type": "code",
+              "filename": "index-as-key.jsx",
+              "code": "{users.map((user, index) => (\n  <li key={index}>{user.name}</li>   // works, but risky!\n))}"
+            },
+            {
+              "type": "paragraph",
+              "text": "This seems to work fine for static lists, but breaks if the list can be reordered, filtered, or items inserted/removed from the middle — because the index no longer reliably identifies “the same item” across renders, causing React to misattribute state to the wrong item (e.g., an input's typed text jumping to the wrong row after a reorder)."
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "Keys give React a stable identity for each item in a list, so it can correctly match items between renders during reconciliation — figuring out what was added, removed, or reordered, rather than re-rendering everything or losing component state. I always use a stable unique ID from the data itself, never the array index, since index-based keys break when the list can be reordered or filtered — React can end up attaching the wrong internal state to the wrong visual position."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "title": "Beginner: Events & Updates",
+      "questions": [
+        {
+          "question": "How do you handle events in React?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "React events look like DOM events, but with important differences: camelCase naming, and you pass a function reference, not a string."
+            },
+            {
+              "type": "code",
+              "filename": "vanilla-vs-react.jsx",
+              "code": "// Vanilla HTML\n<button onclick=\"handleClick()\">Click</button>\n\n// React JSX\n<button onClick={handleClick}>Click</button>   // pass the function itself, don't call it\n<button onClick={() => handleClick(id)}>Click</button>  // wrap in arrow fn if you need args"
+            },
+            {
+              "type": "code",
+              "filename": "Button.jsx",
+              "code": "function Button() {\n  function handleClick(e) {\n    console.log(\"Clicked!\", e);   // e is a SyntheticEvent, not a raw DOM event\n    e.preventDefault();            // works the same way as vanilla JS\n  }\n  return <button onClick={handleClick}>Click me</button>;\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "The classic beginner mistake — calling the function instead of passing it:"
+            },
+            {
+              "type": "code",
+              "filename": "click-handler-mistake.jsx",
+              "code": "<button onClick={handleClick()}>Click</button>   // ❌ runs immediately on render, not on click!\n<button onClick={handleClick}>Click</button>      // ✅ passes the function reference\n<button onClick={() => handleClick()}>Click</button>  // ✅ also correct — wrapped, runs on click"
+            },
+            {
+              "type": "paragraph",
+              "text": "SyntheticEvent — React wraps native browser events in its own cross-browser wrapper object (SyntheticEvent) that normalizes behavior across different browsers, so you don't need browser-specific event-handling code. It has the same interface as native events (.preventDefault(), .target, .stopPropagation(), etc.)."
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "React events use camelCase naming and you pass a function reference rather than a string, unlike inline HTML onclick. React wraps native events in a SyntheticEvent object that normalizes behavior across browsers while exposing the same familiar API — preventDefault, target, and so on. The most common mistake is writing onClick={handleClick()}, which calls the function immediately during render instead of passing it to be called later, on the actual click."
+            }
+          ]
+        },
+        {
+          "question": "What is setState() in React?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "The method used in class components to update state and trigger a re-render. (In functional components, this role is played by the setter function returned from useState — e.g., setCount — which behaves similarly but isn't literally called setState.)"
+            },
+            {
+              "type": "code",
+              "filename": "Counter.jsx",
+              "code": "class Counter extends React.Component {\n  state = { count: 0 };\n\n  increment = () => {\n    this.setState({ count: this.state.count + 1 });\n  };\n\n  render() {\n    return <button onClick={this.increment}>Count: {this.state.count}</button>;\n  }\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "Two critical behaviors interviewers test:"
+            },
+            {
+              "type": "paragraph",
+              "text": "1. setState() is asynchronous/batched — React doesn't update state immediately; it batches multiple setState calls together for performance, then applies them and re-renders once."
+            },
+            {
+              "type": "code",
+              "filename": "async-batching.jsx",
+              "code": "increment = () => {\n  this.setState({ count: this.state.count + 1 });\n  console.log(this.state.count);  // still shows the OLD value — update hasn't applied yet!\n};"
+            },
+            {
+              "type": "paragraph",
+              "text": "2. It merges, doesn't replace, the state object — calling setState({ count: 5 }) only updates count, leaving other state keys untouched (this is different from useState's setter, which fully replaces the value unless you spread manually)."
+            },
+            {
+              "type": "code",
+              "filename": "merge-not-replace.js",
+              "code": "state = { count: 0, name: \"Priya\" };\nthis.setState({ count: 5 });\n// resulting state: { count: 5, name: \"Priya\" } -- name untouched, merged not replaced"
+            },
+            {
+              "type": "paragraph",
+              "text": "The safe pattern for updates that depend on the previous state — pass a function instead of an object, since it always receives the actual latest state, avoiding stale-value bugs from batching:"
+            },
+            {
+              "type": "code",
+              "filename": "functional-setstate.jsx",
+              "code": "// Risky if called multiple times in a row — could use a stale `this.state.count`\nthis.setState({ count: this.state.count + 1 });\n\n// Safe — functional form always gets the correct, latest state\nthis.setState(prevState => ({ count: prevState.count + 1 }));"
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "setState() updates a class component's state and schedules a re-render. It's asynchronous and batched for performance, so reading this.state immediately after calling it can show a stale value. It also merges the update into existing state rather than replacing the whole object. For updates that depend on the previous state, I use the functional form — setState(prevState => ...) — to avoid bugs from stale values when multiple updates are batched together."
+            }
+          ]
+        },
+        {
+          "question": "What is a pure component?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "A component that only re-renders when its props or state actually change — determined via a shallow comparison — instead of re-rendering every time its parent re-renders regardless of whether anything relevant changed."
+            },
+            {
+              "type": "code",
+              "filename": "PureVsRegular.jsx",
+              "code": "// Regular class component — re-renders whenever parent re-renders, even with identical props\nclass RegularComponent extends React.Component {\n  render() {\n    console.log(\"Rendering RegularComponent\");\n    return <p>{this.props.name}</p>;\n  }\n}\n\n// PureComponent — automatically skips re-render if props/state are shallowly equal\nclass PureVersion extends React.PureComponent {\n  render() {\n    console.log(\"Rendering PureVersion\");\n    return <p>{this.props.name}</p>;\n  }\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "The functional-component equivalent is React.memo() (covered fully on Day 9):"
+            },
+            {
+              "type": "code",
+              "filename": "PureFunctional.jsx",
+              "code": "const PureFunctional = React.memo(function MyComponent({ name }) {\n  return <p>{name}</p>;\n});"
+            },
+            {
+              "type": "paragraph",
+              "text": "The critical caveat — “shallow” comparison:"
+            },
+            {
+              "type": "code",
+              "filename": "shallow-comparison-caveat.jsx",
+              "code": "// Primitives compare fine\n<PureVersion count={5} />   // re-renders correctly when count changes\n\n// Objects/arrays are compared by REFERENCE, not deep content!\n<PureVersion user={{ name: \"Priya\" }} />\n// If parent re-creates a NEW object literal each render (even with identical content),\n// PureComponent sees a DIFFERENT reference and re-renders anyway -- the optimization is defeated"
+            },
+            {
+              "type": "paragraph",
+              "text": "This is why passing inline object/array/function literals as props to a PureComponent/React.memo component often silently defeats the whole optimization — each render creates a brand-new reference."
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "A PureComponent automatically implements shouldComponentUpdate with a shallow prop/state comparison, skipping re-renders when nothing relevant actually changed — an optimization over a regular component, which re-renders on every parent re-render by default. The catch is that the comparison is shallow: it compares object/array props by reference, not deep equality, so passing a new object literal as a prop every render defeats the optimization even if the content is identical."
+            }
+          ]
+        },
+        {
+          "question": "What is the virtual DOM?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "A lightweight in-memory JavaScript representation of the actual DOM. React uses it to figure out the minimal set of real DOM changes needed, instead of re-rendering the entire page on every update."
+            },
+            {
+              "type": "paragraph",
+              "text": "The process, step by step:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "When state/props change, React builds a new virtual DOM tree representing the updated UI.",
+                "React compares (“diffs”) this new tree against the previous virtual DOM tree — this process is called reconciliation.",
+                "React calculates the minimal set of actual differences.",
+                "React applies only those specific changes to the real DOM — not a full re-render of everything."
+              ],
+              "ordered": true
+            },
+            {
+              "type": "code",
+              "filename": "virtual-dom-diff.jsx",
+              "code": "// Before: <p>Count: 0</p>\n// After state changes to 1: <p>Count: 1</p>\n\n// React does NOT tear down and rebuild the entire <p> element from scratch.\n// It diffs the two virtual trees, sees only the TEXT content changed,\n// and updates just that text node in the real DOM -- nothing else touched."
+            },
+            {
+              "type": "paragraph",
+              "text": "Why this matters — the actual DOM is expensive to manipulate: every real DOM update can trigger reflow/repaint, which is comparatively slow. Diffing in-memory JavaScript objects (the virtual DOM) is much cheaper, so React minimizes the number of expensive real-DOM touches by batching and calculating the smallest possible update first."
+            },
+            {
+              "type": "code",
+              "filename": "reconciliation-pipeline.md",
+              "code": "  state/props change\n         |\n         v\n  build NEW virtual DOM tree\n         |\n         v\n  DIFF vs previous virtual DOM tree   <-- \"reconciliation\"\n         |\n         v\n  compute minimal patch list\n  (e.g. \"only this text node changed\")\n         |\n         v\n  apply ONLY those patches to the real DOM\n  (no full page re-render)\n",
+              "lang": "markdown"
+            },
+            {
+              "type": "paragraph",
+              "text": "A common misconception worth correcting in an interview: the virtual DOM isn't inherently “faster than the DOM” in some magical universal sense — it's that React's diffing + batching strategy generally results in fewer, more targeted real DOM operations than naive manual re-rendering would, especially as UI complexity grows. For very simple, small updates, hand-written vanilla JS DOM manipulation could technically be faster — the virtual DOM's win is in developer ergonomics (write declarative code) combined with reasonably efficient updates at scale, not raw benchmark speed for every single case."
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "The virtual DOM is an in-memory representation of the UI that React uses to compute the minimal set of real DOM changes needed after a state or props update. When something changes, React builds a new virtual tree, diffs it against the previous one — a process called reconciliation — and applies only the actual differences to the real DOM, rather than re-rendering everything. This matters because real DOM operations are comparatively expensive, so minimizing and batching them keeps updates fast even as the UI grows in complexity."
             }
           ]
         }
