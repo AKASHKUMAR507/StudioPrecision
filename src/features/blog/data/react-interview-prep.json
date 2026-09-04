@@ -679,6 +679,212 @@
           ]
         }
       ]
+    },
+    {
+      "day": 5,
+      "title": "Beginner: Patterns & Optimization",
+      "questions": [
+        {
+          "question": "Explain the concept of lifting state up.",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "When two or more sibling components need to share and stay in sync with the same data, you move (\"lift\") that state to their closest common parent, which then passes it down to both as props."
+            },
+            {
+              "type": "code",
+              "filename": "lifting-state-up.md",
+              "code": "BEFORE — each child has its own private box, they can't see each other\n\n   Parent\n   |\n   +-- NameInput   [ own state: \"\" ]   <-- these two don't know\n   +-- Greeting    [ own state: \"\" ]   <-- about each other at all\n\nAFTER — state moves UP to the parent, both children read from the SAME source\n\n   Parent  [ state: name = \"\" ]   <-- single source of truth\n     |         |\n     v         v\n   NameInput   Greeting\n   (props)     (props)\n\n   Now Greeting always shows the CURRENT text typed into NameInput.",
+              "lang": "markdown"
+            },
+            {
+              "type": "paragraph",
+              "text": "Easy beginner example: imagine a text box where you type your name, and right next to it a sentence that says \"Hello, <name>!\" and updates live as you type. If the input box kept the typed name in its own private state, the Greeting sibling would have no way to know what was typed — it can't reach into another component's state. So instead, the name is stored in the parent, and both the input and the greeting just read from that same shared value."
+            },
+            {
+              "type": "code",
+              "filename": "NameGreeting.jsx",
+              "code": "// BEFORE — the typed text is trapped inside NameInput's own state\nfunction NameInput() {\n  const [name, setName] = useState(\"\");\n  return <input value={name} onChange={e => setName(e.target.value)} />;\n}\nfunction Greeting() {\n  return <p>Hello, ???</p>;   // no way to know what was typed in NameInput\n}\n// Greeting can never see what's typed — they don't know about each other\n\n// AFTER — lift the shared \"name\" state to the parent\nfunction NameForm() {\n  const [name, setName] = useState(\"\");\n\n  return (\n    <>\n      <NameInput value={name} onChange={setName} />\n      <Greeting name={name} />\n    </>\n  );\n}\nfunction NameInput({ value, onChange }) {\n  return <input value={value} onChange={e => onChange(e.target.value)} />;\n}\nfunction Greeting({ name }) {\n  return <p>Hello, {name || \"stranger\"}!</p>;\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "Now Greeting always shows exactly what's typed into NameInput, because both read from the same name value stored in their shared parent — impossible when each managed its own separate, disconnected state."
+            },
+            {
+              "type": "paragraph",
+              "text": "One more example, this time a common real-world pattern — an e-commerce cart badge. The \"Add to Cart\" buttons live inside a ProductList component, but the cart count badge is shown in a completely separate Navbar component — two siblings that both need access to the same number. Clicking a button in ProductList has to somehow update the badge inside Navbar, and the only way to do that is to lift the cartCount state up to their common parent."
+            },
+            {
+              "type": "code",
+              "filename": "CartExample.jsx",
+              "code": "function ShopPage() {\n  const [cartCount, setCartCount] = useState(0);\n  const addToCart = () => setCartCount(c => c + 1);\n\n  return (\n    <>\n      <Navbar cartCount={cartCount} />        {/* sibling 1 — just DISPLAYS the count */}\n      <ProductList onAddToCart={addToCart} /> {/* sibling 2 — just TRIGGERS the update */}\n    </>\n  );\n}\n\nfunction Navbar({ cartCount }) {\n  return <span>🛒 Cart ({cartCount})</span>;\n}\n\nfunction ProductList({ onAddToCart }) {\n  return (\n    <div>\n      <button onClick={onAddToCart}>Add \"T-Shirt\" to Cart</button>\n      <button onClick={onAddToCart}>Add \"Shoes\" to Cart</button>\n    </div>\n  );\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "Same pattern as the name/greeting example: neither ProductList nor Navbar owns the cart count itself — they only receive it (or a way to change it) as props from their shared parent, which stays the single source of truth. That's why clicking \"Add to Cart\" in one sibling instantly updates the badge in a totally different sibling."
+            },
+            {
+              "type": "paragraph",
+              "text": "Why this matters — the underlying principle: React data flows one direction (parent → child, from Day 3). Since siblings can't talk to each other directly, the only way to share state between them is to move that state up to a level both can access, then pass it back down as props."
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "Lifting state up means moving shared state from individual sibling components to their closest common parent, which then passes the data (and update functions) back down as props. It's the standard React pattern for keeping multiple components in sync, since siblings have no direct communication path — the only shared point of truth they both have access to is a common ancestor."
+            }
+          ]
+        },
+        {
+          "question": "What is prop drilling in React?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "The problem that occurs when you have to pass props down through many intermediate components that don't actually need that data themselves — they're just relaying it further down to a deeply nested child that does."
+            },
+            {
+              "type": "code",
+              "filename": "prop-drilling.md",
+              "code": "App  [ has: user ]\n  |\n  |  passes user down just to forward it...\n  v\nLayout  [ user -> just relays it, never reads it ]\n  |\n  v\nSidebar  [ user -> just relays it, never reads it ]\n  |\n  v\nUserProfile  [ user -> FINALLY used here: <p>{user.name}</p> ]\n\nLayout and Sidebar are just \"pass-through\" pipes carrying data\nthey never actually use — that's prop drilling.",
+              "lang": "markdown"
+            },
+            {
+              "type": "code",
+              "filename": "PropDrillingExample.jsx",
+              "code": "function App() {\n  const user = { name: \"Priya\" };\n  return <Layout user={user} />;       // Layout doesn't use `user` at all\n}\nfunction Layout({ user }) {\n  return <Sidebar user={user} />;       // Sidebar doesn't use `user` either\n}\nfunction Sidebar({ user }) {\n  return <UserProfile user={user} />;   // finally, the component that ACTUALLY needs it\n}\nfunction UserProfile({ user }) {\n  return <p>{user.name}</p>;\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "Layout and Sidebar have no use for user themselves — they're just forced to accept and pass it along because it's the only path down to UserProfile. As an app grows, this becomes tedious to maintain and makes components harder to reuse (they're now coupled to props they don't even use)."
+            },
+            {
+              "type": "paragraph",
+              "text": "The fix — Context API (you'll cover this fully on Day 7), which lets deeply nested components read shared data directly without every intermediate level having to know about or forward it:"
+            },
+            {
+              "type": "code",
+              "filename": "ContextFix.jsx",
+              "code": "const UserContext = createContext();\n\nfunction App() {\n  const user = { name: \"Priya\" };\n  return (\n    <UserContext.Provider value={user}>\n      <Layout />   {/* no user prop needed here anymore! */}\n    </UserContext.Provider>\n  );\n}\nfunction UserProfile() {\n  const user = useContext(UserContext);   // reads directly, skipping all intermediate levels\n  return <p>{user.name}</p>;\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "Other alternatives worth mentioning: component composition (passing components as children instead of drilling data), or state management libraries like Redux (you'll cover Redux in the Advanced section) for larger, more complex apps."
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "Prop drilling happens when data has to pass through several intermediate components that don't need it themselves, just to reach a deeply nested child that does — making those middle components unnecessarily coupled to data they never use. The standard fix for moderate cases is the Context API, which lets a deeply nested component read shared data directly without every level in between having to forward it. For larger apps, a dedicated state management library is often used instead."
+            }
+          ]
+        },
+        {
+          "question": "How can you optimize a React application?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "A broad topic — interviewers want to see you know several levers, not just one deep answer."
+            },
+            {
+              "type": "paragraph",
+              "text": "Preventing unnecessary re-renders:"
+            },
+            {
+              "type": "code",
+              "filename": "preventing-rerenders.jsx",
+              "code": "// React.memo — skip re-render if props haven't changed (Day 9 goes deep on this)\nconst MyComponent = React.memo(function MyComponent({ name }) { ... });\n\n// useMemo — memoize expensive computed values (Hooks Deep Dive, Day 13)\nconst sorted = useMemo(() => expensiveSort(list), [list]);\n\n// useCallback — memoize function references so they don't break React.memo (Day 13)\nconst handleClick = useCallback(() => doSomething(id), [id]);"
+            },
+            {
+              "type": "paragraph",
+              "text": "Code-level techniques:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Code splitting / lazy loading (React.lazy + Suspense, covered Day 8 & 21) — load parts of the app only when needed, reducing initial bundle size.",
+                "Virtualization for long lists — libraries like react-window render only the visible portion of a huge list instead of all items at once.",
+                "Keys done right (Day 3) — stable, correct keys avoid unnecessary re-renders/re-mounts in lists.",
+                "Avoid inline object/array/function literals as props when passing to memoized components (Day 4's PureComponent gotcha) — they create new references every render, defeating memoization.",
+                "Debounce/throttle expensive handlers (search inputs, scroll listeners — recall from your JS plan, Day 9)."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Bundle/loading-level techniques:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Minimize bundle size — tree-shaking, removing unused dependencies.",
+                "Image optimization — lazy-load images, use appropriately sized/compressed formats.",
+                "Server-side rendering / static generation (Day 17, 21) — faster initial paint for users."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Easy beginner way to picture it: imagine a big Excel sheet with 10,000 rows. If you re-draw all 10,000 rows every time one cell changes, the app feels slow. Optimization is just a set of tricks to redraw only what actually changed (React.memo, useMemo), load only what's currently needed (code splitting, virtualization), and avoid tricking React into thinking something changed when it didn't (avoiding new object/array literals as props)."
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "Optimization happens at several levels: preventing unnecessary re-renders with React.memo, useMemo, and useCallback; reducing initial load with code splitting and lazy loading; using list virtualization for long lists instead of rendering everything; and being careful not to pass new object/function references as props to memoized components, which silently defeats the optimization. In practice, I'd profile with React DevTools' Profiler first to find the actual bottleneck rather than optimizing blindly."
+            }
+          ]
+        },
+        {
+          "question": "What are React fragments?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "A way to group multiple elements without adding an extra wrapper DOM node. Recall from Day 3 that JSX requires a single root element — Fragments satisfy that rule without polluting the actual rendered HTML with a meaningless extra <div>."
+            },
+            {
+              "type": "code",
+              "filename": "WithoutFragment.jsx",
+              "code": "// Without Fragment — forces an unnecessary wrapper div into the actual DOM\nfunction List() {\n  return (\n    <div>\n      <li>Item 1</li>\n      <li>Item 2</li>\n    </div>\n  );\n}\n// Problem: <li> elements now have an invalid <div> parent instead of a <ul>!"
+            },
+            {
+              "type": "code",
+              "filename": "WithFragment.jsx",
+              "code": "// With Fragment — groups elements with NO extra node in the actual DOM\nfunction List() {\n  return (\n    <React.Fragment>\n      <li>Item 1</li>\n      <li>Item 2</li>\n    </React.Fragment>\n  );\n}\n\n// Shorthand syntax — most commonly used in practice\nfunction List() {\n  return (\n    <>\n      <li>Item 1</li>\n      <li>Item 2</li>\n    </>\n  );\n}"
+            },
+            {
+              "type": "code",
+              "filename": "fragment-dom-diagram.md",
+              "code": "Wrapping in a <div>                Wrapping in a Fragment\n(extra node in real DOM)            (NO extra node in real DOM)\n\n<ul>                                <ul>\n  <div>          <- invalid!           <li>Item 1</li>   <- direct child, valid\n    <li>Item 1</li>                     <li>Item 2</li>   <- direct child, valid\n    <li>Item 2</li>                   </ul>\n  </div>\n</ul>\n\nA <ul> expects <li> to be its DIRECT child.\nA Fragment groups elements in JSX without\nshowing up as a node in the real DOM at all.",
+              "lang": "markdown"
+            },
+            {
+              "type": "paragraph",
+              "text": "Easy beginner example: think of a Fragment like an invisible plastic bag you use to carry two items together in code — but when you actually place the items on the shelf (the real DOM), the bag disappears and only the two items remain, sitting directly on the shelf. A <div> wrapper, by contrast, is like leaving the bag on the shelf too — an extra thing nobody asked for."
+            },
+            {
+              "type": "paragraph",
+              "text": "Why avoiding extra <div>s actually matters:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Invalid HTML in some contexts — e.g., a <div> isn't a valid direct child of <table>, <ul>, or <select>, so an unnecessary wrapper can literally break rendering/semantics in those cases.",
+                "CSS layout issues — extra wrapper divs can interfere with Flexbox/Grid layouts that expect direct children to be the actual content elements.",
+                "Cleaner, smaller DOM tree — fewer unnecessary nodes overall."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "One case where you need the full <React.Fragment key={...}> syntax instead of <>: when rendering a list of Fragments, since the shorthand <> doesn't support the key prop:"
+            },
+            {
+              "type": "code",
+              "filename": "FragmentWithKey.jsx",
+              "code": "{items.map(item => (\n  <React.Fragment key={item.id}>   {/* shorthand <> can't take a key */}\n    <dt>{item.term}</dt>\n    <dd>{item.definition}</dd>\n  </React.Fragment>\n))}"
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "A Fragment lets you group multiple JSX elements and satisfy React's single-root-element rule without adding an actual extra node to the rendered DOM. The shorthand <>...</> is the common syntax, but I use the full <React.Fragment key={...}> form when rendering a list of fragments, since the shorthand doesn't support keys. It matters because unnecessary wrapper divs can break valid HTML nesting rules — like inside a <table> or <ul> — and can interfere with CSS layouts that expect direct children."
+            }
+          ]
+        }
+      ]
     }
   ]
 }
