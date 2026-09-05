@@ -1078,6 +1078,183 @@
           ]
         }
       ]
+    },
+    {
+      "day": 7,
+      "title": "Intermediate: Routing & Hooks Basics",
+      "questions": [
+        {
+          "question": "What is React Router?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "The standard library for handling client-side routing in React — mapping URLs to components, so navigating between \"pages\" doesn't trigger a full browser page reload (which is the whole point of building a Single Page Application, or SPA)."
+            },
+            {
+              "type": "code",
+              "filename": "App.jsx",
+              "code": "import { BrowserRouter, Routes, Route, Link, useNavigate, useParams } from \"react-router-dom\";\n\nfunction App() {\n  return (\n    <BrowserRouter>\n      <nav>\n        <Link to=\"/\">Home</Link>\n        <Link to=\"/about\">About</Link>\n      </nav>\n\n      <Routes>\n        <Route path=\"/\" element={<Home />} />\n        <Route path=\"/about\" element={<About />} />\n        <Route path=\"/users/:id\" element={<UserProfile />} />  {/* dynamic segment */}\n      </Routes>\n    </BrowserRouter>\n  );\n}\n\nfunction UserProfile() {\n  const { id } = useParams();          // read the dynamic URL segment\n  const navigate = useNavigate();       // navigate programmatically\n  return (\n    <div>\n      <p>User ID: {id}</p>\n      <button onClick={() => navigate(\"/\")}>Go home</button>\n    </div>\n  );\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "Key pieces:"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Link instead of a plain <a> tag — prevents the default full-page reload, updates the URL and swaps components client-side instead.",
+                "Route path=\"...\" element={...} — maps a URL pattern to the component that should render there.",
+                "useParams() — reads dynamic segments from the URL, like the :id in /users/:id.",
+                "useNavigate() — programmatic navigation, e.g. redirecting after a form submits."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Why it matters — the core problem it solves: without a router, a React SPA is stuck being a single URL. React Router lets you build an app that feels like it has multiple pages — different URLs, back/forward button support, bookmarkable links — while staying a single-page app under the hood, with no full reloads."
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "React Router maps URLs to components for client-side navigation in a single-page app — clicking a Link updates the URL and swaps the rendered component without a full page reload. It provides useParams to read dynamic URL segments and useNavigate for programmatic redirects. It's what lets an SPA behave like a traditional multi-page site — bookmarkable URLs, working back/forward buttons — without the performance cost of full page reloads."
+            }
+          ]
+        },
+        {
+          "question": "How does useState work in React Hooks?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "You've used useState throughout the Beginner content — here's how it actually works under the hood."
+            },
+            {
+              "type": "code",
+              "filename": "useState-signature.jsx",
+              "code": "const [count, setCount] = useState(0);"
+            },
+            {
+              "type": "list",
+              "items": [
+                "Returns an array: [currentValue, setterFunction] — destructured via array destructuring.",
+                "The argument (0 here) is the initial value, used only on the very first render — ignored on every subsequent re-render."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Lazy initialization — when the initial value is expensive to compute:"
+            },
+            {
+              "type": "code",
+              "filename": "lazy-initialization.jsx",
+              "code": "// BAD — expensiveComputation() runs on EVERY render, even though the result is only used once\nconst [value, setValue] = useState(expensiveComputation());\n\n// GOOD — pass a function; React only calls it once, on initial mount\nconst [value, setValue] = useState(() => expensiveComputation());"
+            },
+            {
+              "type": "paragraph",
+              "text": "Functional updates — when the new state depends on the previous state:"
+            },
+            {
+              "type": "code",
+              "filename": "functional-updates.jsx",
+              "code": "// Risky if called multiple times quickly (e.g., in the same event handler) — can use stale `count`\nsetCount(count + 1);\n\n// Safe — always operates on the true latest value\nsetCount(prevCount => prevCount + 1);"
+            },
+            {
+              "type": "paragraph",
+              "text": "This actually matters in practice:"
+            },
+            {
+              "type": "code",
+              "filename": "stale-closure-demo.jsx",
+              "code": "function handleClick() {\n  setCount(count + 1);  // if count is 0, schedules \"set to 1\"\n  setCount(count + 1);  // still sees count as 0 (stale closure) — schedules \"set to 1\" AGAIN\n  // Result: count only increments by 1, not 2!\n}\nfunction handleClickSafe() {\n  setCount(prev => prev + 1);  // 0 -> 1\n  setCount(prev => prev + 1);  // 1 -> 2 — correctly sees the updated value\n  // Result: count increments by 2, as expected\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "State updates are asynchronous/batched (same concept as setState from Day 4) — calling the setter doesn't immediately change the variable; it schedules a re-render where the new value takes effect."
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "useState returns a [value, setter] pair, with the argument used only as the initial value on first render. For expensive initial computations, I pass a function instead of a value, so it only runs once. Updates are asynchronous and batched, so I use the functional updater form — setCount(prev => prev + 1) — whenever a new state value depends on the previous one, to avoid stale-closure bugs when multiple updates happen in the same handler."
+            }
+          ]
+        },
+        {
+          "question": "What is the useEffect Hook, and how does it work?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "Lets a functional component perform side effects — anything that reaches outside of pure rendering: data fetching, subscriptions, timers, manually touching the DOM, logging."
+            },
+            {
+              "type": "code",
+              "filename": "UserProfile.jsx",
+              "code": "import { useEffect, useState } from \"react\";\n\nfunction UserProfile({ userId }) {\n  const [user, setUser] = useState(null);\n\n  useEffect(() => {\n    fetch(`/api/users/${userId}`)\n      .then(res => res.json())\n      .then(data => setUser(data));\n  }, [userId]);  // dependency array — re-run only when userId changes\n\n  return <div>{user ? user.name : \"Loading...\"}</div>;\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "The dependency array controls when the effect runs:"
+            },
+            {
+              "type": "code",
+              "filename": "dependency-array-variants.jsx",
+              "code": "useEffect(() => { ... });          // runs after EVERY render — no array at all\nuseEffect(() => { ... }, []);      // runs ONCE, only after initial mount — empty array\nuseEffect(() => { ... }, [a, b]);  // runs after mount, AND whenever a or b changes"
+            },
+            {
+              "type": "paragraph",
+              "text": "Cleanup function — returned from the effect, runs before the next effect execution or on unmount:"
+            },
+            {
+              "type": "code",
+              "filename": "cleanup-timer.jsx",
+              "code": "useEffect(() => {\n  const timer = setInterval(() => console.log(\"tick\"), 1000);\n\n  return () => {\n    clearInterval(timer);   // cleanup — prevents leaked timers when component unmounts\n  };\n}, []);"
+            },
+            {
+              "type": "paragraph",
+              "text": "Another classic example — subscribing/unsubscribing to avoid memory leaks:"
+            },
+            {
+              "type": "code",
+              "filename": "cleanup-event-listener.jsx",
+              "code": "useEffect(() => {\n  const handleResize = () => console.log(window.innerWidth);\n  window.addEventListener(\"resize\", handleResize);\n  return () => window.removeEventListener(\"resize\", handleResize);  // cleanup\n}, []);"
+            },
+            {
+              "type": "paragraph",
+              "text": "The classic bug interviewers test — missing or incorrect dependencies:"
+            },
+            {
+              "type": "code",
+              "filename": "stale-dependency-bug.jsx",
+              "code": "useEffect(() => {\n  console.log(count);  // uses `count`\n}, []);  // ❌ empty array — this effect captures the INITIAL count forever, a \"stale closure\"\n// Fix: [count] in the dependency array"
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "useEffect runs side effects after render — data fetching, subscriptions, timers, manual DOM work. The dependency array controls when it re-runs: omitted means every render, empty means once on mount, and populated means it reruns whenever those specific values change. If the effect returns a function, that's the cleanup, run before the next effect execution or on unmount — essential for clearing timers or removing event listeners to avoid memory leaks. The most common bug is a stale closure from a missing dependency, where the effect keeps referencing an old value from when it was first created."
+            }
+          ]
+        },
+        {
+          "question": "Explain Context API in React.",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "Lets you share data across a component tree without manually passing props through every intermediate level — directly solving the prop-drilling problem from Day 5."
+            },
+            {
+              "type": "code",
+              "filename": "ThemeContext.jsx",
+              "code": "import { createContext, useContext, useState } from \"react\";\n\n// 1. Create the context\nconst ThemeContext = createContext();\n\n// 2. Provide it somewhere high up in the tree\nfunction App() {\n  const [theme, setTheme] = useState(\"dark\");\n  return (\n    <ThemeContext.Provider value={{ theme, setTheme }}>\n      <Toolbar />\n    </ThemeContext.Provider>\n  );\n}\n\n// 3. Consume it anywhere below, no matter how deeply nested\nfunction Toolbar() {\n  return <ThemedButton />;   // Toolbar doesn't need to know/pass `theme` at all!\n}\nfunction ThemedButton() {\n  const { theme, setTheme } = useContext(ThemeContext);  // reads directly\n  return (\n    <button onClick={() => setTheme(theme === \"dark\" ? \"light\" : \"dark\")}>\n      Current theme: {theme}\n    </button>\n  );\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "When to actually use it — and when not to: Context is great for genuinely global, infrequently-changing data — theme, authenticated user, locale/language preference. It's not a full replacement for a dedicated state management library (Redux, covered in the Advanced section) for complex, frequently-updating, or highly interdependent application state — because every consumer of a context re-renders whenever the context value changes, even if that particular consumer only cares about part of the value, which can become a performance problem at scale."
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "Context API lets components read shared data directly from a Provider higher up the tree via useContext, without every intermediate component needing to accept and forward that data as props — solving prop drilling. It's well-suited to genuinely global, infrequently-changing values like theme or authenticated user. It's not a full state-management replacement, though — every consumer re-renders on any context value change, so for complex or frequently-updating state, a dedicated library like Redux usually scales better."
+            }
+          ]
+        }
+      ]
     }
   ]
 }
