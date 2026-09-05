@@ -885,6 +885,199 @@
           ]
         }
       ]
+    },
+    {
+      "day": 6,
+      "title": "Review Day (Beginner)",
+      "questions": [
+        {
+          "question": "What's the difference between state and props?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "Easy way to picture it: state is a component's own backpack — it can reach in and change what's inside whenever it wants. Props are more like a gift someone else handed the component — it can look at the gift and use it, but it can't reach back and change what the giver has."
+            },
+            {
+              "type": "table",
+              "headers": [
+                "",
+                "State",
+                "Props"
+              ],
+              "rows": [
+                [
+                  "Who owns it",
+                  "The component itself",
+                  "The parent component"
+                ],
+                [
+                  "Can it change?",
+                  "Yes — via setState / useState setter",
+                  "No — read-only inside the receiving component"
+                ],
+                [
+                  "Where does it live",
+                  "Internal to one component",
+                  "Passed down from parent to child"
+                ],
+                [
+                  "Who can update it",
+                  "Only the component that owns it",
+                  "Only the parent (by re-rendering with new prop values)"
+                ]
+              ]
+            },
+            {
+              "type": "code",
+              "filename": "StateVsProps.jsx",
+              "code": "function Parent() {\n  const [count, setCount] = useState(0);   // Parent's own STATE\n  return <Child value={count} />;           // passed down as a PROP\n}\n\nfunction Child({ value }) {\n  // `value` is a PROP here — Child can read it, but cannot change it directly.\n  // Child has no `setValue` — only Parent controls when `value` changes.\n  return <p>Current count: {value}</p>;\n}"
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "State is data a component owns and can change itself, usually through a setter like useState's second value. Props are data passed IN from a parent, and are read-only from the receiving component's point of view — only the parent that owns that data can change it, by re-rendering with new prop values. In short: state is internal and mutable by the component itself, props are external and read-only."
+            }
+          ]
+        },
+        {
+          "question": "Why should you never mutate state directly, even for something like an array .push()?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "React decides whether to re-render by comparing the OLD state reference to the NEW state reference — not by deeply inspecting what's inside. If you mutate the existing array or object in place (like calling .push() on it), the reference never changes, so React looks at it, sees the exact same reference as before, and assumes nothing changed — it may skip the re-render entirely, even though the data technically did change."
+            },
+            {
+              "type": "code",
+              "filename": "mutation-vs-new-reference.md",
+              "code": "MUTATING (wrong) — same box, just rearranged inside\n\n   state = [\"a\", \"b\"]   <- reference #1\n   state.push(\"c\")       <- same array object, just modified in place\n   state = [\"a\", \"b\", \"c\"]   <- STILL reference #1\n\n   React compares: reference #1 === reference #1  -> \"nothing changed\"\n   Result: re-render may be SKIPPED, UI doesn't update\n\nREPLACING (correct) — a brand new box\n\n   state = [\"a\", \"b\"]              <- reference #1\n   state = [...state, \"c\"]          <- brand NEW array object -> reference #2\n\n   React compares: reference #1 !== reference #2  -> \"something changed!\"\n   Result: re-render happens, UI updates correctly",
+              "lang": "markdown"
+            },
+            {
+              "type": "code",
+              "filename": "avoid-mutation.jsx",
+              "code": "// WRONG — mutates the existing array, reference stays the same\nfunction addItem(item) {\n  items.push(item);       // mutates in place\n  setItems(items);        // same reference -> React may not re-render!\n}\n\n// RIGHT — creates a brand new array, reference changes\nfunction addItem(item) {\n  setItems([...items, item]);   // new array -> React sees the change and re-renders\n}\n\n// Same idea for objects:\n// WRONG:  user.name = \"New Name\"; setUser(user);\n// RIGHT:  setUser({ ...user, name: \"New Name\" });"
+            },
+            {
+              "type": "paragraph",
+              "text": "Easy way to remember it: React doesn't open the box and check every item inside — it just checks \"is this the SAME box as last time, or a different one?\" Mutating hands back the same box; spreading (...) hands back a brand new box with the updated contents, which is the signal React actually looks for."
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "React uses reference equality, not deep comparison, to detect state changes. Mutating an array or object in place keeps the same reference, so React may not realize anything changed and can skip the re-render — leading to stale UI. Always create a new array or object (using spread syntax, map, filter, etc.) so React sees a new reference and knows to re-render, and also because it avoids unpredictable bugs when the old and new state are compared elsewhere, like in useMemo or useEffect dependency arrays."
+            }
+          ]
+        },
+        {
+          "question": "What's wrong with using array index as a key in a list, and when does it actually cause a visible bug?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "Recall from Day 3: keys tell React which DOM element corresponds to which piece of data across renders, so it can correctly match, reuse, or reorder them instead of tearing everything down and rebuilding it. Using the array index as the key breaks this whenever the list's ORDER can change — inserting, removing, or reordering items anywhere except the very end."
+            },
+            {
+              "type": "paragraph",
+              "text": "The bug becomes visible specifically when list items carry their OWN internal state (like a text input's typed value, a checkbox's checked state, or an open/closed toggle) — because React matches by key/index, not by the actual data, so it can attach the wrong internal state to the wrong item after a reorder."
+            },
+            {
+              "type": "code",
+              "filename": "index-key-bug.jsx",
+              "code": "// Each item is just an index-keyed <input> holding its own typed text\nfunction TodoList({ todos }) {\n  // todos = [{ id: 1, text: \"Buy milk\" }, { id: 2, text: \"Walk dog\" }]\n  return todos.map((todo, index) => (\n    <input key={index} defaultValue={todo.text} />   // ❌ using index as key\n  ));\n}\n\n// Say the user types \"Buy MILK!!\" into the first input, then deletes \"Buy milk\" from the list.\n// \"Walk dog\" now shifts up to index 0.\n// React sees: key=0 still exists -> \"same element, just update its defaultValue\"\n// But defaultValue only applies on first mount — the DOM <input> is REUSED,\n// so it still shows \"Buy MILK!!\" even though the underlying data is now \"Walk dog\"!"
+            },
+            {
+              "type": "paragraph",
+              "text": "That's the classic, genuinely visible bug: typed text (or a checked checkbox, or an open accordion panel) sticks to the wrong row after items are added/removed/reordered, because React reused the DOM node for the wrong piece of data. With a stable, unique key (like todo.id), React correctly recognizes that a specific item was removed and moves the DOM nodes with it, instead of reusing them for the wrong data."
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "Array index as key breaks whenever the list order can change, because React matches elements by key across renders — with index keys, item #0 always means \"whatever is now first,\" regardless of which actual data item that is. This becomes a visible bug specifically when list items hold their own local state or uncontrolled input values: after a reorder, React reuses the DOM node for the same index but the underlying data has shifted, so the input text, checkbox state, or toggle sticks to the wrong item. The fix is a stable, unique key derived from the data itself, like an id, not its position in the array."
+            }
+          ]
+        },
+        {
+          "question": "Why doesn't the virtual DOM make React \"faster than the DOM\" in every single case — what's the actual mechanism that helps?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "The virtual DOM itself isn't magically fast — building a tree of plain JavaScript objects still takes real time and memory. In fact, for a single, tiny, well-targeted update, directly manipulating the real DOM by hand can be faster than going through React's whole render → diff → patch cycle."
+            },
+            {
+              "type": "paragraph",
+              "text": "The actual thing that helps is reconciliation (from Day 4): React builds the new virtual DOM tree, diffs it against the previous one entirely in memory (cheap, no browser reflow/repaint involved), and computes the SMALLEST possible list of real changes needed — then applies only that minimal patch list to the real DOM."
+            },
+            {
+              "type": "code",
+              "filename": "why-vdom-helps.md",
+              "code": "The expensive part isn't reading/writing JS objects — it's touching the REAL DOM,\nbecause that can trigger the browser's layout (reflow) and paint pipeline.\n\nWithout a diffing step:\n  state changes -> re-render everything -> touch EVERY real DOM node -> slow\n\nWith virtual DOM + reconciliation:\n  state changes -> build new VDOM (cheap, in memory)\n                -> diff vs old VDOM (cheap, in memory)\n                -> touch ONLY the few real DOM nodes that actually changed -> fast\n\nSo the virtual DOM isn't \"faster computation\" — it's a way to figure out the\nMINIMUM number of expensive real-DOM operations needed, before doing any of them.",
+              "lang": "markdown"
+            },
+            {
+              "type": "paragraph",
+              "text": "So the honest, easy version: the virtual DOM trades a small amount of cheap JavaScript work (building and diffing plain objects) to avoid a large amount of expensive real-DOM work (unnecessary reflows/repaints). For a handful of manual, surgical DOM updates, hand-written vanilla JS can beat React — the virtual DOM's real win shows up in complex UIs with many interdependent updates, where figuring out the minimal DOM changes by hand would be error-prone and slow to write."
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "The virtual DOM isn't inherently faster than direct DOM manipulation — creating and diffing JS objects still costs time, and a single well-targeted manual DOM update can outperform React's full cycle. What actually helps is reconciliation: React diffs the new virtual tree against the previous one in memory, computes the minimal set of real DOM changes needed, and applies only those — avoiding unnecessary, expensive browser reflows and repaints. The benefit shows up most in complex, frequently-updating UIs, not in every single case."
+            }
+          ]
+        },
+        {
+          "question": "You have two sibling inputs that need to stay in sync. What pattern do you reach for, and why can't the siblings just talk to each other directly?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "The pattern is lifting state up (Day 5): move the shared value out of both siblings and into their closest common parent, which then passes it back down to both as props."
+            },
+            {
+              "type": "paragraph",
+              "text": "The reason siblings can't talk directly comes down to React's core rule: data only flows one direction, from parent to child (Day 3). There's no built-in \"sideways\" channel between two components sitting next to each other in the tree — a component only ever receives data through its own props, which only its parent controls. So if two siblings need to share something, the only place both of them can reach is a common ancestor, which is why the shared state has to live there instead."
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "I'd lift the shared state up to the closest common parent, which then passes the value (and an updater function) down to both siblings as props. Siblings can't communicate directly because React's data flow is strictly one-directional — parent to child — so there's no sideways channel between two components at the same level. The only point both siblings have guaranteed access to is a shared ancestor, which is why lifting state up is the standard fix."
+            }
+          ]
+        },
+        {
+          "question": "Code snippet: a functional component using conditional rendering (&& or ternary)",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "Easy example: a login status message. If the user is logged in, show a welcome message and a \"new messages\" badge; otherwise, show a \"please log in\" prompt."
+            },
+            {
+              "type": "code",
+              "filename": "LoginStatus.jsx",
+              "code": "function LoginStatus({ isLoggedIn, username, unreadCount }) {\n  return (\n    <div>\n      {/* Ternary — picks ONE of two things to render */}\n      {isLoggedIn ? (\n        <p>Welcome back, {username}!</p>\n      ) : (\n        <p>Please log in to continue.</p>\n      )}\n\n      {/* && — renders something ONLY if the condition is true, otherwise renders nothing */}\n      {isLoggedIn && unreadCount > 0 && (\n        <span className=\"badge\">{unreadCount} new messages</span>\n      )}\n    </div>\n  );\n}\n\n// <LoginStatus isLoggedIn={true} username=\"Priya\" unreadCount={3} />\n// -> \"Welcome back, Priya!\" + \"3 new messages\" badge\n\n// <LoginStatus isLoggedIn={false} />\n// -> \"Please log in to continue.\" (no badge)"
+            },
+            {
+              "type": "paragraph",
+              "text": "Easy way to remember which to use: reach for the ternary (condition ? a : b) when you need to choose between TWO different things to show. Reach for && when you only need to show something SOMETIMES, and render nothing the rest of the time — just remember the Day 3 gotcha: keep the left side of && a real boolean (unreadCount > 0), not a raw number, or a stray 0 will get rendered onto the page."
+            }
+          ]
+        },
+        {
+          "question": "Code snippet: lifting state up between two sibling components",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "A fresh example for review, different from the ones earlier in this series: two sibling buttons that need to agree on which color is currently selected — a ColorPicker (a row of color buttons) and a ColorPreview (a box that displays whatever color is currently picked)."
+            },
+            {
+              "type": "code",
+              "filename": "ColorPickerApp.jsx",
+              "code": "function ColorPickerApp() {\n  const [color, setColor] = useState(\"tomato\");   // shared state lives in the PARENT\n\n  return (\n    <>\n      <ColorPicker selectedColor={color} onSelect={setColor} />  {/* sibling 1 */}\n      <ColorPreview color={color} />                              {/* sibling 2 */}\n    </>\n  );\n}\n\nfunction ColorPicker({ selectedColor, onSelect }) {\n  const colors = [\"tomato\", \"gold\", \"seagreen\"];\n  return (\n    <div>\n      {colors.map((c) => (\n        <button key={c} onClick={() => onSelect(c)}>\n          {c === selectedColor ? `✓ ${c}` : c}\n        </button>\n      ))}\n    </div>\n  );\n}\n\nfunction ColorPreview({ color }) {\n  return <div style={{ width: 80, height: 80, background: color }} />;\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "Clicking a button in ColorPicker calls onSelect(c), which runs setColor in the parent — that re-renders both siblings with the new color, so ColorPreview instantly reflects the choice. Neither sibling ever talks to the other directly; ColorPicker only knows how to ask the parent to change color, and ColorPreview only knows how to display whatever color the parent hands it."
+            }
+          ]
+        }
+      ]
     }
   ]
 }
