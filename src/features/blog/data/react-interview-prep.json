@@ -1255,6 +1255,789 @@
           ]
         }
       ]
+    },
+    {
+      "day": 8,
+      "title": "Intermediate: Forms & Refs",
+      "questions": [
+        {
+          "question": "What are controlled and uncontrolled components?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "This is about who \"owns\" a form input's value: React state, or the DOM itself."
+            },
+            {
+              "type": "paragraph",
+              "text": "Controlled component: React state is the single source of truth. Every render, the input's displayed value comes directly from state, and every keystroke updates that state through onChange."
+            },
+            {
+              "type": "code",
+              "filename": "ControlledInput.jsx",
+              "lang": "jsx",
+              "code": "function ControlledInput() {\n  const [value, setValue] = useState(\"\");\n  return (\n    <input\n      value={value}                              // React dictates what's shown\n      onChange={(e) => setValue(e.target.value)}  // every keystroke updates state\n    />\n  );\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "Because the value always comes from state, you always know the current value, can validate or transform it on every change, and can programmatically reset or set it whenever you want."
+            },
+            {
+              "type": "paragraph",
+              "text": "Uncontrolled component: the DOM manages its own value, and React only reads it when needed, via a ref."
+            },
+            {
+              "type": "code",
+              "filename": "UncontrolledInput.jsx",
+              "lang": "jsx",
+              "code": "function UncontrolledInput() {\n  const inputRef = useRef(null);\n\n  const handleSubmit = () => {\n    console.log(inputRef.current.value);  // read the current DOM value on demand\n  };\n\n  return (\n    <>\n      <input ref={inputRef} defaultValue=\"initial text\" />  {/* defaultValue, not value! */}\n      <button onClick={handleSubmit}>Submit</button>\n    </>\n  );\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "Here the DOM element itself holds the value. React doesn't re-render on every keystroke, and you only reach in and read the value when you actually need it, for example on submit."
+            },
+            {
+              "type": "note",
+              "label": "When to use which",
+              "text": "Controlled is the React-idiomatic default, used when you want live validation, a submit button that's conditionally disabled, or the value synced elsewhere. Uncontrolled is simpler and slightly faster for very basic forms where you only need the final value on submit, or when integrating with non-React code that expects to manage the DOM itself."
+            },
+            {
+              "type": "table",
+              "headers": [
+                "",
+                "Controlled",
+                "Uncontrolled"
+              ],
+              "rows": [
+                [
+                  "Who owns the value",
+                  "React state",
+                  "The DOM"
+                ],
+                [
+                  "Prop used",
+                  "value + onChange",
+                  "defaultValue + ref"
+                ],
+                [
+                  "Re-renders on keystroke",
+                  "Yes",
+                  "No"
+                ],
+                [
+                  "Reading the value",
+                  "Always available in state",
+                  "Read on demand via ref"
+                ]
+              ]
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "A controlled component has its value driven entirely by React state: the input always reflects state, and every change goes through an onChange handler that updates that state. An uncontrolled component lets the DOM manage its own value internally, and React only reads it on demand via a ref, typically at submit time. Controlled is the more common, React-idiomatic default since it enables live validation and keeps the UI in sync with a single source of truth; uncontrolled is simpler for basic cases or when integrating with non-React DOM code."
+            }
+          ]
+        },
+        {
+          "question": "What is lazy loading in React?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "Lazy loading means deferring the loading of a component or module until it's actually needed, instead of bundling everything into one large JavaScript file that loads upfront. This directly reduces initial load time."
+            },
+            {
+              "type": "code",
+              "filename": "LazyDashboard.jsx",
+              "lang": "jsx",
+              "code": "import { lazy, Suspense } from \"react\";\n\n// Instead of a normal top-level import, use React.lazy with a dynamic import()\nconst HeavyDashboard = lazy(() => import(\"./HeavyDashboard\"));\n\nfunction App() {\n  return (\n    <Suspense fallback={<p>Loading...</p>}>  {/* shown while the chunk downloads */}\n      <HeavyDashboard />\n    </Suspense>\n  );\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "What's actually happening: import(\"./HeavyDashboard\") is a dynamic import. Instead of bundling HeavyDashboard's code into the main JS bundle at build time, the bundler (Webpack or Vite) splits it into a separate chunk file that's only fetched over the network when HeavyDashboard is actually about to render. Suspense provides a fallback UI to show while that chunk is downloading."
+            },
+            {
+              "type": "paragraph",
+              "text": "The most common real-world use case is route-based code splitting:"
+            },
+            {
+              "type": "code",
+              "filename": "AppRoutes.jsx",
+              "lang": "jsx",
+              "code": "const Home = lazy(() => import(\"./pages/Home\"));\nconst About = lazy(() => import(\"./pages/About\"));\nconst Settings = lazy(() => import(\"./pages/Settings\"));   // rarely visited page\n\nfunction App() {\n  return (\n    <Suspense fallback={<Spinner />}>\n      <Routes>\n        <Route path=\"/\" element={<Home />} />\n        <Route path=\"/about\" element={<About />} />\n        <Route path=\"/settings\" element={<Settings />} />\n      </Routes>\n    </Suspense>\n  );\n}"
+            },
+            {
+              "type": "note",
+              "label": "Why it matters",
+              "text": "A user who only ever visits \"/\" never downloads the code for \"/settings\" at all. It's fetched only if and when they actually navigate there, shrinking the initial bundle and improving first-load performance."
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "Lazy loading defers loading a component's code until it's actually needed, using React.lazy() with a dynamic import(), which tells the bundler to split that component into its own chunk instead of the main bundle. Paired with Suspense to show a fallback while the chunk downloads, this is most commonly applied per route, so users only download the code for pages they actually visit."
+            }
+          ]
+        },
+        {
+          "question": "How do you handle forms in React?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "Building on controlled components from the first question, here's a fuller, realistic form example."
+            },
+            {
+              "type": "code",
+              "filename": "SignupForm.jsx",
+              "lang": "jsx",
+              "code": "function SignupForm() {\n  const [formData, setFormData] = useState({ name: \"\", email: \"\", password: \"\" });\n  const [errors, setErrors] = useState({});\n\n  const handleChange = (e) => {\n    const { name, value } = e.target;\n    setFormData(prev => ({ ...prev, [name]: value }));  // spread + computed key\n  };\n\n  const validate = () => {\n    const newErrors = {};\n    if (!formData.email.includes(\"@\")) newErrors.email = \"Invalid email\";\n    if (formData.password.length < 8) newErrors.password = \"Password too short\";\n    return newErrors;\n  };\n\n  const handleSubmit = (e) => {\n    e.preventDefault();   // stop the browser's default full-page-reload submission\n    const newErrors = validate();\n    if (Object.keys(newErrors).length > 0) {\n      setErrors(newErrors);\n      return;\n    }\n    console.log(\"Submitting:\", formData);\n    // API call here\n  };\n\n  return (\n    <form onSubmit={handleSubmit}>\n      <input name=\"name\" value={formData.name} onChange={handleChange} placeholder=\"Name\" />\n      <input name=\"email\" value={formData.email} onChange={handleChange} placeholder=\"Email\" />\n      {errors.email && <p>{errors.email}</p>}\n      <input name=\"password\" type=\"password\" value={formData.password} onChange={handleChange} />\n      {errors.password && <p>{errors.password}</p>}\n      <button type=\"submit\">Sign up</button>\n    </form>\n  );\n}"
+            },
+            {
+              "type": "list",
+              "ordered": false,
+              "items": [
+                "One handleChange for multiple fields: using the input's name attribute as a computed object key ([name]: value), rather than writing a separate handler per field.",
+                "e.preventDefault() is critical: without it, submitting a form triggers a full browser page reload, wiping out your SPA's state entirely.",
+                "Client-side validation before submit: check for errors, and only proceed with the actual submission (often an async API call) if the data passes.",
+                "In real projects, most teams reach for a library like React Hook Form or Formik instead of hand-rolling this logic, since they handle validation, error state, and performance more robustly."
+              ]
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "Forms in React are typically built with controlled inputs, one shared onChange handler that uses each input's name attribute as a dynamic object key to update the right field in state, and a submit handler that calls e.preventDefault() to stop the default full-page reload before running validation and, ultimately, the API call. For anything beyond simple forms, I'd reach for a library like React Hook Form rather than hand-rolling validation and error state, since it also avoids unnecessary re-renders on every keystroke."
+            }
+          ]
+        },
+        {
+          "question": "What are refs in React, and how do you use them?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "A ref is a way to get a direct reference to a DOM element, or to store a mutable value that persists across renders without causing a re-render when it changes. It's an escape hatch outside React's normal declarative data flow."
+            },
+            {
+              "type": "code",
+              "filename": "FocusInput.jsx",
+              "lang": "jsx",
+              "code": "import { useRef } from \"react\";\n\nfunction TextInputWithFocusButton() {\n  const inputRef = useRef(null);   // starts as null\n\n  const focusInput = () => {\n    inputRef.current.focus();      // directly call a DOM method\n  };\n\n  return (\n    <>\n      <input ref={inputRef} />     {/* React attaches the actual DOM node to inputRef.current */}\n      <button onClick={focusInput}>Focus the input</button>\n    </>\n  );\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "There are two distinct uses of useRef, and both matter. First, accessing a DOM node directly, for things React's declarative API doesn't cover: focusing an input, measuring an element's size, triggering a video's play(), or integrating a third-party non-React library that needs a raw DOM node."
+            },
+            {
+              "type": "paragraph",
+              "text": "Second, storing a mutable value that persists across renders without triggering a re-render. This is the one that trips people up, since it's very different from useState."
+            },
+            {
+              "type": "code",
+              "filename": "Timer.jsx",
+              "lang": "jsx",
+              "code": "function Timer() {\n  const countRef = useRef(0);   // NOT tied to rendering\n\n  const increment = () => {\n    countRef.current += 1;\n    console.log(countRef.current);  // updates immediately, synchronously\n  };\n\n  return <button onClick={increment}>Increment (check console)</button>;\n  // Note: the UI never visually updates here, since changing a ref does NOT trigger a re-render!\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "A common real use case is storing a setInterval ID so it can be cleared later, or tracking a previous value across renders for comparison. Anywhere you need to \"remember\" something without it affecting what's rendered."
+            },
+            {
+              "type": "table",
+              "headers": [
+                "",
+                "useState",
+                "useRef"
+              ],
+              "rows": [
+                [
+                  "Triggers re-render on change",
+                  "Yes",
+                  "No"
+                ],
+                [
+                  "Value persists across renders",
+                  "Yes",
+                  "Yes"
+                ],
+                [
+                  "Use case",
+                  "Data that should appear on screen",
+                  "DOM access, or \"instance variables\" that don't affect rendering"
+                ]
+              ]
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "A ref, created with useRef, gives you a mutable .current value that persists across renders without causing a re-render when it changes, unlike state. The two main uses are getting a direct handle to a DOM node for imperative operations React doesn't have a declarative API for, like focusing an input, and storing values you need to remember across renders but that shouldn't trigger re-rendering, like a timer ID or a previous value for comparison."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "day": 9,
+      "title": "Intermediate: Performance & Lifecycle",
+      "questions": [
+        {
+          "question": "How does React.memo work?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "React.memo wraps a functional component and skips re-rendering it if its props are shallowly equal to the previous render. The real understanding comes from seeing how it behaves with different prop types, since primitives, objects, arrays, and functions all behave very differently under a shallow comparison."
+            },
+            {
+              "type": "note",
+              "label": "1. Basic example: primitive props",
+              "text": "A prop that's a plain string, number, or boolean."
+            },
+            {
+              "type": "code",
+              "filename": "Child.jsx",
+              "lang": "jsx",
+              "code": "import React, { useState } from \"react\";\n\nconst Child = React.memo(({ name }) => {\n  console.log(\"Child rendered\");\n  return <h2>Hello {name}</h2>;\n});\n\nfunction App() {\n  const [count, setCount] = useState(0);\n\n  return (\n    <>\n      <button onClick={() => setCount(count + 1)}>Count: {count}</button>\n      <Child name=\"Akash\" />\n    </>\n  );\n}"
+            },
+            {
+              "type": "code",
+              "filename": "flow.md",
+              "lang": "markdown",
+              "code": "When count changes:\n\n  App re-render\n       |\n       v\n  Child receives \"Akash\"\n       |\n       v\n  \"Akash\" === \"Akash\"  ->  true\n       |\n       v\n  Child does NOT re-render"
+            },
+            {
+              "type": "paragraph",
+              "text": "React.memo compares the props from the previous render to the new ones. Since name is still the primitive string \"Akash\", the comparison is true and the Child render is skipped."
+            },
+            {
+              "type": "note",
+              "label": "2. Multiple props",
+              "text": "If even one prop changes, the memoized component can still re-render, while unrelated props being unchanged doesn't matter."
+            },
+            {
+              "type": "code",
+              "filename": "User.jsx",
+              "lang": "jsx",
+              "code": "const User = React.memo(({ name, age }) => {\n  console.log(\"User rendered\");\n  return (\n    <div>\n      <h2>{name}</h2>\n      <p>{age}</p>\n    </div>\n  );\n});\n\nfunction App() {\n  const [count, setCount] = useState(0);\n  const [age, setAge] = useState(25);\n\n  return (\n    <>\n      <button onClick={() => setCount(count + 1)}>Count: {count}</button>\n      <button onClick={() => setAge(age + 1)}>Age: {age}</button>\n      <User name=\"Akash\" age={age} />\n    </>\n  );\n}"
+            },
+            {
+              "type": "code",
+              "filename": "flow.md",
+              "lang": "markdown",
+              "code": "count changed:                  age changed:\n\n  App re-renders                  App re-renders\n       |                               |\n       v                               v\n  name = \"Akash\"  (same)          age = 26  (different)\n  age  = 25       (same)               |\n       |                               v\n       v                          User RE-RENDERS\n  User does NOT render"
+            },
+            {
+              "type": "note",
+              "label": "Key rule",
+              "text": "If even one prop changes, the memoized component can re-render. All props must stay equal to the previous render for React.memo to skip it."
+            },
+            {
+              "type": "note",
+              "label": "3. React.memo with an object",
+              "text": "This is where many developers get confused, and a very common interview trap."
+            },
+            {
+              "type": "code",
+              "filename": "User-object.jsx",
+              "lang": "jsx",
+              "code": "const User = React.memo(({ user }) => {\n  console.log(\"User rendered\");\n  return <h2>{user.name}</h2>;\n});\n\nfunction App() {\n  const [count, setCount] = useState(0);\n\n  return (\n    <>\n      <button onClick={() => setCount(count + 1)}>{count}</button>\n      <User user={{ name: \"Akash\" }} />\n    </>\n  );\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "You might expect that since the user data hasn't actually changed, User shouldn't re-render. But it will render every time, because { name: \"Akash\" } creates a brand-new object on every single App render."
+            },
+            {
+              "type": "code",
+              "filename": "reference-equality.js",
+              "lang": "js",
+              "code": "const user1 = { name: \"Akash\" };\nconst user2 = { name: \"Akash\" };\n\nconsole.log(user1 === user2);\n// false - even though the contents are identical, they are different objects in memory"
+            },
+            {
+              "type": "note",
+              "label": "4. Fixing the object problem with useMemo",
+              "text": "Wrapping the object creation in useMemo keeps the same object reference across renders, as long as its dependency array doesn't change."
+            },
+            {
+              "type": "code",
+              "filename": "User-usememo.jsx",
+              "lang": "jsx",
+              "code": "const User = React.memo(({ user }) => {\n  console.log(\"User rendered\");\n  return <h2>{user.name}</h2>;\n});\n\nfunction App() {\n  const [count, setCount] = useState(0);\n\n  const user = useMemo(() => {\n    return { name: \"Akash\" };\n  }, []);\n\n  return (\n    <>\n      <button onClick={() => setCount(count + 1)}>{count}</button>\n      <User user={user} />\n    </>\n  );\n}"
+            },
+            {
+              "type": "code",
+              "filename": "flow.md",
+              "lang": "markdown",
+              "code": "App re-render\n     |\n     v\nuseMemo returns the SAME object (deps unchanged)\n     |\n     v\nuser reference is the same as last render\n     |\n     v\nReact.memo sees equal props\n     |\n     v\nUser does NOT re-render"
+            },
+            {
+              "type": "note",
+              "label": "5. React.memo with functions",
+              "text": "Another very important interview concept, since inline functions have the exact same reference-equality problem as objects."
+            },
+            {
+              "type": "code",
+              "filename": "Button.jsx",
+              "lang": "jsx",
+              "code": "const Button = React.memo(({ onClick }) => {\n  console.log(\"Button rendered\");\n  return <button onClick={onClick}>Click</button>;\n});\n\nfunction App() {\n  const [count, setCount] = useState(0);\n\n  const handleClick = () => {\n    console.log(\"clicked\");\n  };\n\n  return (\n    <>\n      <h1>{count}</h1>\n      <button onClick={() => setCount(count + 1)}>Increase</button>\n      <Button onClick={handleClick} />\n    </>\n  );\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "Even though Button is memoized, it still re-renders every time App re-renders. That's because const handleClick = () => {...} creates a brand-new function on every App render, and functions, like objects, are compared by reference."
+            },
+            {
+              "type": "note",
+              "label": "6. Fixing the function problem with useCallback",
+              "text": "useCallback memoizes the function itself, so it keeps the same reference across renders, as long as its dependency array doesn't change."
+            },
+            {
+              "type": "code",
+              "filename": "Button-usecallback.jsx",
+              "lang": "jsx",
+              "code": "const Button = React.memo(({ onClick }) => {\n  console.log(\"Button rendered\");\n  return <button onClick={onClick}>Click</button>;\n});\n\nfunction App() {\n  const [count, setCount] = useState(0);\n\n  const handleClick = useCallback(() => {\n    console.log(\"clicked\");\n  }, []);\n\n  return (\n    <>\n      <h1>{count}</h1>\n      <button onClick={() => setCount(count + 1)}>Increase</button>\n      <Button onClick={handleClick} />\n    </>\n  );\n}"
+            },
+            {
+              "type": "code",
+              "filename": "flow.md",
+              "lang": "markdown",
+              "code": "App renders\n     |\n     v\nhandleClick reference stays the same (deps unchanged)\n     |\n     v\nButton receives the same onClick prop\n     |\n     v\nReact.memo sees equal props\n     |\n     v\nButton does NOT re-render"
+            },
+            {
+              "type": "note",
+              "label": "7. React.memo with arrays",
+              "text": "Arrays hit the exact same problem as objects, since a new array literal is a new reference every render."
+            },
+            {
+              "type": "code",
+              "filename": "List.jsx",
+              "lang": "jsx",
+              "code": "const List = React.memo(({ items }) => {\n  console.log(\"List rendered\");\n  return (\n    <ul>\n      {items.map(item => <li key={item}>{item}</li>)}\n    </ul>\n  );\n});\n\nfunction App() {\n  const [count, setCount] = useState(0);\n\n  return (\n    <>\n      <button onClick={() => setCount(count + 1)}>{count}</button>\n      <List items={[\"React\", \"Node\", \"Java\"]} />\n    </>\n  );\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "The array [\"React\", \"Node\", \"Java\"] is recreated on every render, so oldArray === newArray is false even though the contents are identical, and List re-renders every time."
+            },
+            {
+              "type": "note",
+              "label": "8. Fixing the array problem with useMemo",
+              "text": "Same fix as the object case: wrap the array creation in useMemo so the reference stays stable across renders."
+            },
+            {
+              "type": "code",
+              "filename": "App-list-usememo.jsx",
+              "lang": "jsx",
+              "code": "function App() {\n  const [count, setCount] = useState(0);\n\n  const items = useMemo(() => {\n    return [\"React\", \"Node\", \"Java\"];\n  }, []);\n\n  return (\n    <>\n      <button onClick={() => setCount(count + 1)}>{count}</button>\n      <List items={items} />\n    </>\n  );\n}"
+            },
+            {
+              "type": "note",
+              "label": "9. Custom comparison with React.memo",
+              "text": "React.memo accepts a second argument: a custom comparison function that lets you decide exactly when the component should update, overriding the default shallow comparison."
+            },
+            {
+              "type": "code",
+              "filename": "User-custom-compare.jsx",
+              "lang": "jsx",
+              "code": "const User = React.memo(\n  ({ name, age }) => {\n    console.log(\"User rendered\");\n    return <div>{name} - {age}</div>;\n  },\n  (prevProps, nextProps) => {\n    return prevProps.name === nextProps.name;  // only compare name, ignore age\n  }\n);"
+            },
+            {
+              "type": "paragraph",
+              "text": "This tells React: only compare name, and ignore age entirely. So if name stays the same and age changes, the component still doesn't render. If name changes, it renders regardless of age."
+            },
+            {
+              "type": "note",
+              "label": "Warning",
+              "text": "Be careful with a custom comparison function. If you tell it to ignore a prop that the component actually uses to render, you can end up with stale UI that silently fails to update."
+            },
+            {
+              "type": "note",
+              "label": "10. React Native example",
+              "text": "A FlatList rendering many items is one of the most common places React.memo pays off in a React Native app."
+            },
+            {
+              "type": "code",
+              "filename": "UserList.jsx",
+              "lang": "jsx",
+              "code": "const UserItem = React.memo(({ user }) => {\n  console.log(\"UserItem rendered:\", user.name);\n  return (\n    <View>\n      <Text>{user.name}</Text>\n    </View>\n  );\n});\n\nfunction UserList() {\n  const [count, setCount] = useState(0);\n\n  const users = [\n    { id: 1, name: \"Akash\" },\n    { id: 2, name: \"Rahul\" },\n    { id: 3, name: \"Aman\" },\n  ];\n\n  return (\n    <>\n      <Button title={`Count ${count}`} onPress={() => setCount(count + 1)} />\n      <FlatList\n        data={users}\n        keyExtractor={item => String(item.id)}\n        renderItem={({ item }) => <UserItem user={item} />}\n      />\n    </>\n  );\n}"
+            },
+            {
+              "type": "note",
+              "label": "The catch",
+              "text": "The users array here is recreated on every render of UserList, exactly like the array example above. For real-world React Native performance, you'd normally get the data from state, a store, or an API response and keep item references stable when possible, rather than redeclaring a literal array inline on every render."
+            },
+            {
+              "type": "note",
+              "label": "11. The mental model",
+              "text": "The whole behavior comes down to one flow."
+            },
+            {
+              "type": "code",
+              "filename": "mental-model.md",
+              "lang": "markdown",
+              "code": "             Parent renders\n                   |\n                   v\n            Child receives props\n                   |\n                   v\n             React.memo?\n                   |\n             +-----+-----+\n             |           |\n        props same   props changed\n             |           |\n             v           v\n        Skip render   Render child"
+            },
+            {
+              "type": "table",
+              "headers": [
+                "Type",
+                "Example comparison",
+                "Result"
+              ],
+              "rows": [
+                [
+                  "Primitive",
+                  "\"Akash\" === \"Akash\"",
+                  "true"
+                ],
+                [
+                  "Primitive",
+                  "25 === 25",
+                  "true"
+                ],
+                [
+                  "Primitive",
+                  "true === true",
+                  "true"
+                ],
+                [
+                  "Object",
+                  "{} === {}",
+                  "false"
+                ],
+                [
+                  "Array",
+                  "[] === []",
+                  "false"
+                ],
+                [
+                  "Function",
+                  "(() => {}) === (() => {})",
+                  "false"
+                ]
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Primitives compare by value, so two equal primitives are always \"the same\" to React.memo. Objects, arrays, and functions compare by reference, so a freshly created one is always \"different,\" even with identical contents. That's exactly why React.memo, useMemo, and useCallback are so often used together: useMemo and useCallback keep object, array, and function props referentially stable across renders so React.memo actually has a chance to skip the render."
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "React.memo memoizes a functional component and skips its re-render when its props are shallowly equal to the previous props. It's useful for preventing unnecessary child renders, especially in performance-sensitive components such as large lists. For object, array, and function props, stable references may require useMemo or useCallback, since those types are compared by reference rather than by value."
+            }
+          ]
+        },
+        {
+          "question": "What is the difference between componentDidMount and useEffect?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "This is a very common React interview question, and the easiest way to understand it is: componentDidMount is a class component lifecycle method, while useEffect is a Hook used in functional components."
+            },
+            {
+              "type": "note",
+              "label": "1. componentDidMount",
+              "text": "Used in class components, and runs once, after the component is mounted to the UI."
+            },
+            {
+              "type": "code",
+              "filename": "User.jsx",
+              "lang": "jsx",
+              "code": "class User extends React.Component {\n  componentDidMount() {\n    console.log(\"Component mounted\");\n\n    // API call\n    // event listener\n    // subscription\n  }\n\n  render() {\n    return <Text>User</Text>;\n  }\n}"
+            },
+            {
+              "type": "code",
+              "filename": "flow.md",
+              "lang": "markdown",
+              "code": "Component created\n      |\n      v\n  render()\n      |\n      v\n  UI mounted\n      |\n      v\n  componentDidMount()"
+            },
+            {
+              "type": "note",
+              "label": "2. useEffect",
+              "text": "Used in functional components."
+            },
+            {
+              "type": "code",
+              "filename": "User.jsx",
+              "lang": "jsx",
+              "code": "function User() {\n  useEffect(() => {\n    console.log(\"Component mounted\");\n  }, []);\n\n  return <Text>User</Text>;\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "The empty dependency array, [], means the effect runs after the initial mount and doesn't re-run because of dependency changes. So useEffect(() => { console.log(\"Mounted\"); }, []) is roughly comparable to componentDidMount() { console.log(\"Mounted\"); }."
+            },
+            {
+              "type": "note",
+              "label": "3. But useEffect can do much more",
+              "text": "This is where the difference becomes important. componentDidMount runs only when the component mounts, full stop:"
+            },
+            {
+              "type": "code",
+              "filename": "class-mount-only.jsx",
+              "lang": "jsx",
+              "code": "componentDidMount() {\n  fetchUsers();\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "useEffect, on the other hand, can also run in response to specific dependencies changing:"
+            },
+            {
+              "type": "code",
+              "filename": "effect-with-deps.jsx",
+              "lang": "jsx",
+              "code": "useEffect(() => {\n  fetchUser(userId);\n}, [userId]);"
+            },
+            {
+              "type": "code",
+              "filename": "flow.md",
+              "lang": "markdown",
+              "code": "Component mounts\n      |\n      v\n  useEffect runs\n      |\n      v\n  userId changes\n      |\n      v\n  useEffect runs again"
+            },
+            {
+              "type": "paragraph",
+              "text": "So useEffect is more flexible: it can respond to a mount, and to specific changes afterward, all through the same API."
+            },
+            {
+              "type": "note",
+              "label": "4. Cleanup",
+              "text": "Both can perform cleanup."
+            },
+            {
+              "type": "code",
+              "filename": "Timer-class.jsx",
+              "lang": "jsx",
+              "code": "class Timer extends React.Component {\n  componentDidMount() {\n    this.timer = setInterval(() => {\n      console.log(\"Running...\");\n    }, 1000);\n  }\n\n  componentWillUnmount() {\n    clearInterval(this.timer);\n  }\n\n  render() {\n    return <Text>Timer</Text>;\n  }\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "With Hooks, the function returned from useEffect is the cleanup function:"
+            },
+            {
+              "type": "code",
+              "filename": "Timer-hooks.jsx",
+              "lang": "jsx",
+              "code": "function Timer() {\n  useEffect(() => {\n    const timer = setInterval(() => {\n      console.log(\"Running...\");\n    }, 1000);\n\n    return () => {\n      clearInterval(timer);\n    };\n  }, []);\n\n  return <Text>Timer</Text>;\n}"
+            },
+            {
+              "type": "code",
+              "filename": "cleanup-shape.jsx",
+              "lang": "jsx",
+              "code": "useEffect(() => {\n  // setup\n\n  return () => {\n    // cleanup\n  };\n}, []);"
+            },
+            {
+              "type": "note",
+              "label": "5. Common interview trap: useEffect isn't exactly componentDidMount",
+              "text": "Don't say \"useEffect is the functional equivalent of componentDidMount\" without qualification. That's not completely correct."
+            },
+            {
+              "type": "code",
+              "filename": "no-deps.jsx",
+              "lang": "jsx",
+              "code": "useEffect(() => {\n  // runs after EVERY render\n});"
+            },
+            {
+              "type": "paragraph",
+              "text": "useEffect with no dependency array at all runs after every render, while componentDidMount runs only once. It's specifically useEffect with an empty dependency array, [], that resembles componentDidMount's \"runs once\" behavior."
+            },
+            {
+              "type": "table",
+              "headers": [
+                "componentDidMount",
+                "useEffect"
+              ],
+              "rows": [
+                [
+                  "Class component",
+                  "Functional component"
+                ],
+                [
+                  "Lifecycle method",
+                  "Hook"
+                ],
+                [
+                  "Runs after mount",
+                  "Runs after render"
+                ],
+                [
+                  "Runs once",
+                  "Depends on dependency array"
+                ],
+                [
+                  "No dependency array concept",
+                  "Supports dependencies"
+                ],
+                [
+                  "Cleanup usually in componentWillUnmount",
+                  "Cleanup returned from the effect itself"
+                ],
+                [
+                  "Older React pattern",
+                  "Modern React pattern"
+                ]
+              ]
+            },
+            {
+              "type": "note",
+              "label": "6. React Native example",
+              "text": "The same shift shows up directly in React Native screens."
+            },
+            {
+              "type": "code",
+              "filename": "HomeScreen-old.jsx",
+              "lang": "jsx",
+              "code": "// Old class component\nclass HomeScreen extends React.Component {\n  componentDidMount() {\n    this.getData();\n  }\n\n  componentWillUnmount() {\n    console.log(\"Screen unmounted\");\n  }\n\n  getData() {\n    // API call\n  }\n\n  render() {\n    return <Text>Home</Text>;\n  }\n}"
+            },
+            {
+              "type": "code",
+              "filename": "HomeScreen-modern.jsx",
+              "lang": "jsx",
+              "code": "// Modern functional component\nfunction HomeScreen() {\n  useEffect(() => {\n    getData();\n\n    return () => {\n      console.log(\"Screen unmounted\");\n    };\n  }, []);\n\n  return <Text>Home</Text>;\n}"
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "componentDidMount is a lifecycle method available in React class components and runs once after the component is mounted. useEffect is a Hook for functional components that runs after rendering and can be controlled using a dependency array. Unlike componentDidMount, useEffect can also respond to changes in specific dependencies and can return a cleanup function for things like subscriptions, timers, and event listeners."
+            },
+            {
+              "type": "note",
+              "label": "One extra thing for React Native interviews",
+              "text": "useEffect runs after the component renders, but it is not the right place for every kind of side effect. Understanding useEffect versus useLayoutEffect versus handling things directly in event handlers is the next level of this topic."
+            }
+          ]
+        },
+        {
+          "question": "What are higher-order components (HOCs)?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "A higher-order component is a function that takes a component as input and returns a new, enhanced component. It's a pattern for reusing component logic across multiple components, conceptually similar to a higher-order function but operating on components instead of plain functions."
+            },
+            {
+              "type": "code",
+              "filename": "withLogger.jsx",
+              "lang": "jsx",
+              "code": "// The HOC - a function that takes a component, returns a new component\nfunction withLogger(WrappedComponent) {\n  return function EnhancedComponent(props) {\n    console.log(\"Component rendered\");\n    return <WrappedComponent {...props} />;   // spread the rest of the props through\n  };\n}\n\nfunction User({ name }) {\n  return <h2>Hello {name}</h2>;\n}\n\nconst UserWithLogger = withLogger(User);\n\nfunction App() {\n  return <UserWithLogger name=\"Akash\" />;\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "The original User component isn't modified. withLogger just wraps it: App renders UserWithLogger, which runs the logging logic and then renders the original User underneath."
+            },
+            {
+              "type": "paragraph",
+              "text": "The main purpose is reusing logic across components without duplicating it. Suppose Profile, Dashboard, and Settings all need the same authentication check. Instead of copying that logic into all three, wrap each one with a shared HOC:"
+            },
+            {
+              "type": "code",
+              "filename": "withAuth.jsx",
+              "lang": "jsx",
+              "code": "function withAuth(WrappedComponent) {\n  return function ProtectedComponent(props) {\n    const isLoggedIn = true;\n    if (!isLoggedIn) {\n      return <h2>Please login</h2>;\n    }\n    return <WrappedComponent {...props} />;\n  };\n}\n\nconst ProtectedProfile = withAuth(Profile);\nconst ProtectedDashboard = withAuth(Dashboard);\nconst ProtectedSettings = withAuth(Settings);"
+            },
+            {
+              "type": "paragraph",
+              "text": "Now all three components share the same authentication logic without duplicating it. The {...props} spread is what lets the HOC forward the original component's props through untouched: if you render <User name=\"Akash\" age={25} />, props inside the HOC is { name: \"Akash\", age: 25 }, and <WrappedComponent {...props} /> forwards both back onto the wrapped component."
+            },
+            {
+              "type": "paragraph",
+              "text": "An HOC can also inject extra data or props that the wrapped component didn't originally receive, such as a user object from context:"
+            },
+            {
+              "type": "code",
+              "filename": "withUser.jsx",
+              "lang": "jsx",
+              "code": "function withUser(WrappedComponent) {\n  return function EnhancedComponent(props) {\n    const user = { name: \"Akash\", role: \"Developer\" };\n    return <WrappedComponent {...props} user={user} />;\n  };\n}\n\nfunction Profile({ user }) {\n  return <p>{user.name} - {user.role}</p>;\n}\n\nconst EnhancedProfile = withUser(Profile);"
+            },
+            {
+              "type": "note",
+              "label": "Naming convention",
+              "text": "HOCs conventionally start with \"with\" (withLoading, withAuth, withUser, withRouter from React Router's older API) — a strong signal in interviews and code reviews that you're looking at an HOC. Also worth remembering: an HOC is a function that returns a component, not a component itself, and it's a different tool from React.memo, which specifically exists to prevent unnecessary re-renders rather than to add or share behavior."
+            },
+            {
+              "type": "note",
+              "label": "Why HOCs are less common today",
+              "text": "Custom Hooks now solve most of the same reuse problems more simply, without HOCs' downsides: \"wrapper hell\" from stacking multiple HOCs, unclear prop origin (hard to trace which HOC injected which prop), and naming collisions between HOCs. Most codebases today reach for a custom Hook first, and only consider an HOC for very specific cases, like needing to intercept the rendering itself rather than just share stateful logic. Still worth knowing well, since existing codebases and libraries use HOCs extensively."
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "A higher-order component is a function that takes a component and returns a new component with added behavior or props, a pattern for sharing logic across multiple components, like injecting a loading state or auth data. They're named with a \"with\" prefix by convention. Custom Hooks have largely replaced HOCs in modern code, since Hooks avoid HOCs' classic downsides: deeply nested wrapper hell from stacking several HOCs, and difficulty tracing which HOC injected which prop."
+            }
+          ]
+        },
+        {
+          "question": "How does error handling work in React?",
+          "body": [
+            {
+              "type": "paragraph",
+              "text": "React error handling is mainly about preventing one component's rendering error from crashing the entire UI. Different kinds of errors are handled in different ways."
+            },
+            {
+              "type": "paragraph",
+              "text": "Error boundaries are the most important mechanism: they catch errors that happen during rendering and lifecycle methods. An error boundary is traditionally created using a class component."
+            },
+            {
+              "type": "code",
+              "filename": "ErrorBoundary.jsx",
+              "lang": "jsx",
+              "code": "class ErrorBoundary extends React.Component {\n  state = { hasError: false };\n\n  static getDerivedStateFromError(error) {\n    return { hasError: true };   // update state so the next render shows fallback UI\n  }\n\n  componentDidCatch(error, errorInfo) {\n    console.error(\"Caught an error:\", error, errorInfo);\n    // could log to an error-reporting service here (Sentry, etc.)\n  }\n\n  render() {\n    if (this.state.hasError) {\n      return <h1>Something went wrong.</h1>;   // fallback UI instead of a crash\n    }\n    return this.props.children;\n  }\n}\n\nfunction App() {\n  return (\n    <ErrorBoundary>\n      <BuggyComponent />\n    </ErrorBoundary>\n  );\n}"
+            },
+            {
+              "type": "paragraph",
+              "text": "getDerivedStateFromError is used to update state so the fallback UI shows on the next render. componentDidCatch is used for logging and reporting the error, for example sending it to an error-monitoring service. Keep the two separate in your head: getDerivedStateFromError decides what to show, componentDidCatch decides what to log."
+            },
+            {
+              "type": "note",
+              "label": "Critical limitation — what error boundaries do NOT catch",
+              "text": "Error boundaries catch errors during rendering, lifecycle methods, and constructors of child components. They do not catch errors in event handlers, errors in asynchronous code such as setTimeout, promises, or async/await, errors during server-side rendering, or errors thrown inside the error boundary itself."
+            },
+            {
+              "type": "code",
+              "filename": "uncaught-cases.jsx",
+              "lang": "jsx",
+              "code": "// 1. Errors in event handlers - NOT caught by an error boundary\nfunction Button() {\n  const handleClick = () => { throw new Error(\"oops\"); };\n  return <button onClick={handleClick}>Click</button>;\n  // Fix: wrap the logic in a normal try/catch inside the handler itself\n}\n\n// 2. Errors in async code - NOT caught either\nuseEffect(() => {\n  fetch(\"/api/data\").then(() => { throw new Error(\"oops\"); });\n}, []);"
+            },
+            {
+              "type": "paragraph",
+              "text": "Regular try/catch still has a place, just not as a replacement for error boundaries. It's useful for your own synchronous JavaScript logic, such as parsing JSON or validating a value, but wrapping a component's render output in try/catch does not catch errors thrown during React's own rendering process."
+            },
+            {
+              "type": "paragraph",
+              "text": "API and event handler errors need to be handled explicitly, using your own state. A common pattern is to track loading, data, and error state around a fetch call:"
+            },
+            {
+              "type": "code",
+              "filename": "useFetchUsers.jsx",
+              "lang": "jsx",
+              "code": "const [users, setUsers] = useState([]);\nconst [loading, setLoading] = useState(true);\nconst [error, setError] = useState(null);\n\nuseEffect(() => {\n  const fetchUsers = async () => {\n    try {\n      const response = await fetch(\"/users\");\n      if (!response.ok) throw new Error(\"Failed to fetch users\");\n      const data = await response.json();\n      setUsers(data);\n    } catch (error) {\n      setError(error.message);\n    } finally {\n      setLoading(false);\n    }\n  };\n  fetchUsers();\n}, []);\n\nif (loading) return <ActivityIndicator />;\nif (error) return <p>{error}</p>;\nreturn <UserList users={users} />;"
+            },
+            {
+              "type": "paragraph",
+              "text": "In a real app you typically wrap risky, independent sections of the tree in their own error boundaries, rather than one boundary around the entire app. If just the payment section crashes, the header, profile, and settings sections keep working, and only the payment section shows a fallback."
+            },
+            {
+              "type": "table",
+              "headers": [
+                "Error source",
+                "How it's handled"
+              ],
+              "rows": [
+                [
+                  "Rendering / lifecycle / constructors",
+                  "Error boundary (getDerivedStateFromError + componentDidCatch)"
+                ],
+                [
+                  "Event handlers",
+                  "try/catch inside the handler itself"
+                ],
+                [
+                  "Async code (fetch, promises, setTimeout)",
+                  "try/catch around the async call, plus your own error state"
+                ],
+                [
+                  "Client-side validation logic",
+                  "Plain try/catch in your own JS"
+                ]
+              ]
+            },
+            {
+              "type": "note",
+              "label": "Interview-ready answer",
+              "text": "React uses error boundaries to catch errors during rendering, lifecycle methods, and constructors of child components. An error boundary uses getDerivedStateFromError to display fallback UI and componentDidCatch to log or report the error. However, error boundaries don't catch errors from event handlers, asynchronous code, or promises, so those errors need to be handled using try/catch or appropriate async error handling. In API calls, we typically maintain loading, success, and error states and show appropriate UI."
+            }
+          ]
+        }
+      ]
     }
   ]
 }
